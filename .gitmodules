@@ -1,0 +1,6 @@
+[submodule "swarmprom"]
+	path = swarmprom
+	url = https://github.com/stefanprodan/swarmprom
+[submodule "docker-elk"]
+	path = docker-elk
+	url = https://github.com/deviantony/docker-elk
