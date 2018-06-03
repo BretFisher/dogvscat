@@ -1,0 +1,249 @@
+version: "3.3"
+
+networks:
+  net: {}
+  proxy:
+    external: true
+  logging:
+    external: true
+
+volumes:
+    prometheus:
+      driver: rexray/dobs
+      driver_opts:
+        size: 10
+    grafana:
+      driver: rexray/dobs
+      driver_opts:
+        size: 1
+    alertmanager:
+      driver: rexray/dobs
+      driver_opts:
+        size: 1
+
+configs:
+  # caddy_config:
+    # file: ./caddy/Caddyfile
+  dockerd_config:
+    file: ./swarmprom/dockerd-exporter/Caddyfile
+  node_rules:
+    file: ./swarmprom/prometheus/rules/swarm_node.rules.yml
+  task_rules:
+    file: ./swarmprom/prometheus/rules/swarm_task.rules.yml
+
+services:
+  dockerd-exporter:
+    image: stefanprodan/caddy
+    networks:
+      - net
+    environment:
+      - DOCKER_GWBRIDGE_IP=172.18.0.1
+    configs:
+      - source: dockerd_config
+        target: /etc/caddy/Caddyfile
+    deploy:
+      mode: global
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
+  cadvisor:
+    image: google/cadvisor
+    networks:
+      - net
+    command: -logtostderr -docker_only
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /:/rootfs:ro
+      - /var/run:/var/run
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    deploy:
+      mode: global
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
+  grafana:
+    image: stefanprodan/swarmprom-grafana:5.0.1
+    networks:
+      - net
+      - proxy
+    environment:
+      - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      #- GF_SERVER_ROOT_URL=${GF_SERVER_ROOT_URL:-localhost}
+      #- GF_SMTP_ENABLED=${GF_SMTP_ENABLED:-false}
+      #- GF_SMTP_FROM_ADDRESS=${GF_SMTP_FROM_ADDRESS:-grafana@test.com}
+      #- GF_SMTP_FROM_NAME=${GF_SMTP_FROM_NAME:-Grafana}
+      #- GF_SMTP_HOST=${GF_SMTP_HOST:-smtp:25}
+      #- GF_SMTP_USER=${GF_SMTP_USER}
+      #- GF_SMTP_PASSWORD=${GF_SMTP_PASSWORD}
+    volumes:
+      - grafana:/var/lib/grafana
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.serviceDomain=grafana.dogvs.cat
+        - com.df.port=3000
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
+  alertmanager:
+    image: stefanprodan/swarmprom-alertmanager:v0.14.0
+    networks:
+      - net
+      - proxy
+    environment:
+      - SLACK_URL=${SLACK_URL:-https://hooks.slack.com/services/TOKEN}
+      - SLACK_CHANNEL=${SLACK_CHANNEL:-general}
+      - SLACK_USER=${SLACK_USER:-alertmanager}
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    volumes:
+      - alertmanager:/alertmanager
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.serviceDomain=alertmanager.dogvs.cat
+        - com.df.port=9093
+        - com.df.users=${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
+  unsee:
+    image: cloudflare/unsee:v0.8.0
+    networks:
+      - net
+      - proxy
+    environment:
+      - "ALERTMANAGER_URIS=default:http://alertmanager:9093"
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.serviceDomain=unsee.dogvs.cat
+        - com.df.port=9094
+        # - com.df.users=${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}
+
+  node-exporter:
+    image: stefanprodan/swarmprom-node-exporter:v0.15.2
+    networks:
+      - net
+    environment:
+      - NODE_ID={{.Node.ID}}
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+      - /etc/hostname:/etc/nodename
+    command:
+      - '--path.sysfs=/host/sys'
+      - '--path.procfs=/host/proc'
+      - '--collector.textfile.directory=/etc/node-exporter/'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+      # no collectors are explicitely enabled here, because the defaults are just fine,
+      # see https://github.com/prometheus/node_exporter
+      # disable ipvs collector because it barfs the node-exporter logs full with errors on my centos 7 vm's
+      - '--no-collector.ipvs'
+    deploy:
+      mode: global
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
+  prometheus:
+    image: stefanprodan/swarmprom-prometheus:v2.2.0-rc.0
+    networks:
+      - net
+      - proxy
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention=24h'
+    volumes:
+      - prometheus:/prometheus
+    configs:
+      - source: node_rules
+        target: /etc/prometheus/swarm_node.rules.yml
+      - source: task_rules
+        target: /etc/prometheus/swarm_task.rules.yml
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.serviceDomain=prom.dogvs.cat
+        - com.df.port=9090
+        - com.df.users=${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          memory: 2048M
+        reservations:
+          memory: 128M
+
+  # caddy:
+    # image: stefanprodan/caddy
+    # ports:
+      # - "3000:3000"
+      # - "9090:9090"
+      # - "9093:9093"
+      # - "9094:9094"
+    # networks:
+      # - net
+    # environment:
+      # - ADMIN_USER=${ADMIN_USER:-admin}
+      # - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+    # configs:
+      # - source: caddy_config
+        # target: /etc/caddy/Caddyfile
+    # deploy:
+      # mode: replicated
+      # replicas: 1
+      # placement:
+        # constraints:
+          # - node.role == manager
+      # resources:
+        # limits:
+          # memory: 128M
+        # reservations:
+          # memory: 64M
+    # healthcheck:
+      # test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      # interval: 5s
+      # timeout: 1s
+      # retries: 5

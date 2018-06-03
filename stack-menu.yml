@@ -1,0 +1,26 @@
+version: '3.4'
+
+services:
+
+  menu:
+    image: bretfisher/dogvscat-menu
+    build:
+      context: menu
+    deploy:
+      replicas: 3
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.serviceDomain=www.dogvs.cat,dogvs.cat
+        - com.df.port=80
+    networks:
+      - proxy
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: "udp://127.0.0.1:18201"
+
+networks:
+  proxy:
+    external: true
+

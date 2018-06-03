@@ -1,0 +1,65 @@
+version: '3.5'
+
+services:
+
+  ghost:
+    image: ghost:1-alpine
+    networks:
+      - proxy
+      - ghost
+      - logging
+    environment:
+      # see https://docs.ghost.org/docs/config#section-running-ghost-with-config-env-variables
+      database__client: mysql
+      database__connection__host: db
+      database__connection__user: root
+      database__connection__password: OpdP2dy4jzAT
+      database__connection__database: ghost
+      url: http://ghost.dogvs.cat
+    deploy:
+      replicas: 2
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.serviceDomain=ghost.dogvs.cat
+        - com.df.port=2368
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: "udp://127.0.0.1:18201"
+
+  db:
+    image: mysql:5.7
+    volumes:
+      - db:/var/lib/mysql
+    secrets:
+      - db-password
+    networks:
+      - ghost
+      - logging
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db-password
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: "udp://127.0.0.1:18201"
+
+networks:
+  ghost: {}
+  proxy:
+    external: true
+  logging:
+    external: true
+
+volumes:
+  db:
+    driver: rexray/dobs
+    driver_opts:
+      size: 1
+
+secrets:
+  db-password:
+    file: ./secret-ghost-db
+
+
+

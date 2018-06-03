@@ -1,0 +1,136 @@
+version: '3'
+
+services:
+
+  viz:
+    image: portainer/portainer
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.serviceDomain=portainer.dogvs.cat
+        - com.df.port=9000
+    networks:
+      - proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: "udp://127.0.0.1:18201"
+
+networks:
+  proxy:
+    external: true
+
+  portus:
+    build: .
+    image: opensuse/portus:development
+    command: bundle exec rails runner /srv/Portus/examples/development/compose/init.rb
+    environment:
+      - PORTUS_MACHINE_FQDN_VALUE=${MACHINE_FQDN}
+      - PORTUS_PUMA_HOST=0.0.0.0:3000
+      - PORTUS_CHECK_SSL_USAGE_ENABLED=false
+      - PORTUS_SECURITY_CLAIR_SERVER=http://clair:6060
+
+      - CCONFIG_PREFIX=PORTUS
+
+      - PORTUS_DB_HOST=db
+      - PORTUS_DB_PASSWORD=portus
+      - PORTUS_DB_POOL=5
+
+      - RAILS_SERVE_STATIC_FILES=true
+    ports:
+      - 3000:3000
+    depends_on:
+      - db
+    links:
+      - db
+    volumes:
+      - .:/srv/Portus
+
+  background:
+    image: opensuse/portus:development
+    entrypoint: bundle exec rails runner /srv/Portus/bin/background.rb
+    depends_on:
+      - portus
+      - db
+    environment:
+      - PORTUS_MACHINE_FQDN_VALUE=${MACHINE_FQDN}
+      - PORTUS_SECURITY_CLAIR_SERVER=http://clair:6060
+
+      # Theoretically not needed, but cconfig's been buggy on this...
+      - CCONFIG_PREFIX=PORTUS
+
+      - PORTUS_DB_HOST=db
+      - PORTUS_DB_PASSWORD=portus
+      - PORTUS_DB_POOL=5
+    volumes:
+      - .:/srv/Portus
+    links:
+      - db
+
+  webpack:
+    image: kkarczmarczyk/node-yarn:6.9-slim
+    command: bash /srv/Portus/examples/development/compose/bootstrap-webpack
+    working_dir: /srv/Portus
+    volumes:
+      - .:/srv/Portus
+
+  clair:
+    image: quay.io/coreos/clair:v2.0.2
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    links:
+      - postgres
+    ports:
+      - "6060-6061:6060-6061"
+    volumes:
+      - /tmp:/tmp
+      - ./examples/compose/clair/clair.yml:/clair.yml
+    command: [-config, /clair.yml]
+
+  db:
+    image: library/mariadb:10.0.23
+    command: mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci --init-connect='SET NAMES UTF8;' --innodb-flush-log-at-trx-commit=0
+    environment:
+      MYSQL_ROOT_PASSWORD: portus
+
+  postgres:
+    image: library/postgres:10-alpine
+    environment:
+      POSTGRES_PASSWORD: portus
+
+  registry:
+    image: library/registry:2.6
+    environment:
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /registry_data
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+
+      REGISTRY_HTTP_ADDR: 0.0.0.0:5000
+      REGISTRY_HTTP_DEBUG_ADDR: 0.0.0.0:5001
+
+      REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE: /etc/docker/registry/portus.crt
+
+      REGISTRY_AUTH_TOKEN_REALM: http://${MACHINE_FQDN}:3000/v2/token
+      REGISTRY_AUTH_TOKEN_SERVICE: ${MACHINE_FQDN}:${REGISTRY_PORT}
+      REGISTRY_AUTH_TOKEN_ISSUER: ${MACHINE_FQDN}
+
+      REGISTRY_NOTIFICATIONS_ENDPOINTS: >
+        - name: portus
+          url: http://${MACHINE_FQDN}:3000/v2/webhooks/events
+          timeout: 2000ms
+          threshold: 5
+          backoff: 1s
+    volumes:
+      - /registry_data
+      - ./examples/development/compose/portus.crt:/etc/docker/registry/portus.crt:ro
+    ports:
+      - ${REGISTRY_PORT}:5000
+      - 5001:5001
+    links:
+      - portus

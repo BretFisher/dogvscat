@@ -1,0 +1,11 @@
+version: '3.1'
+
+services:
+  images:
+    image: docker
+    command: "while true; do docker image prune -af; sleep 86400; done"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      mode: global
+

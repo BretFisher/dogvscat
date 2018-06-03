@@ -1,0 +1,80 @@
+version: '3.5'
+
+services:
+
+  redis:
+    image: redis:alpine
+    networks:
+      - frontend
+    # logging:
+      # driver: "gelf"
+      # options:
+        # gelf-address: "tcp://127.0.0.1:18201"
+
+  db:
+    image: postgres:9.6
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    # logging:
+      # driver: "gelf"
+      # options:
+        # gelf-address: "tcp://127.0.0.1:18201"
+
+  vote:
+    image: bretfisher/examplevotingapp_vote
+    networks:
+      - frontend
+      - proxy
+    deploy:
+      replicas: 2
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.serviceDomain=vote.dogvs.cat
+        - com.df.port=80
+    # logging:
+      # driver: "gelf"
+      # options:
+        # gelf-address: "tcp://127.0.0.1:18201"
+ 
+  result:
+    image: bretfisher/examplevotingapp_result
+    networks:
+      - backend
+      - proxy
+    deploy:
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.serviceDomain=result.dogvs.cat
+        - com.df.port=80
+    # logging:
+      # driver: "gelf"
+      # options:
+        # gelf-address: "tcp://127.0.0.1:18201"
+ 
+  worker:
+    image: bretfisher/examplevotingapp_worker:java
+    networks:
+      - frontend
+      - backend
+    deploy:
+      replicas: 2
+    # logging:
+      # driver: "gelf"
+      # options:
+        # gelf-address: "tcp://127.0.0.1:18201"
+
+networks:
+  frontend: {}
+  backend: {}
+  proxy:
+    external: true
+
+volumes:
+  db-data:
+    driver: rexray/dobs
+    driver_opts:
+      size: 1

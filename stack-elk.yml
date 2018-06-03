@@ -1,0 +1,80 @@
+version: '3.5'
+
+services:
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.2.2
+    configs:
+      - source: elastic_config
+        target: /usr/share/elasticsearch/config/elasticsearch.yml
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+    networks:
+      - elk
+    volumes:
+      - elasticsearch:/usr/share/elasticsearch/data
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash-oss:6.2.2
+    ports:
+      - "5000:5000"
+      - "9600:9600"
+    configs:
+      - source: logstash_config
+        target: /usr/share/logstash/config/logstash.yml
+      - source: logstash_pipeline-2
+        target: /usr/share/logstash/pipeline/logstash.conf
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    networks:
+      - elk
+      - logging
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana-oss:6.2.2
+    configs:
+      - source: kibana_config
+        target: /usr/share/kibana/config/kibana.yml
+    networks:
+      - elk
+      - proxy
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.serviceDomain=kibana.dogvs.cat
+        - com.df.port=5601
+        - com.df.users=${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}
+
+
+configs:
+
+  elastic_config:
+    file: ./docker-elk/elasticsearch/config/elasticsearch.yml
+  logstash_config:
+    file: ./docker-elk/logstash/config/logstash.yml
+  logstash_pipeline-2:
+    file: ./docker-elk/logstash/pipeline/logstash.conf
+  kibana_config:
+    file: ./docker-elk/kibana/config/kibana.yml
+
+networks:
+  elk:
+  proxy:
+    external: true
+  logging:
+    external: true
+
+volumes:
+  elasticsearch:
+    driver: rexray/dobs
+    driver_opts:
+      size: 10
