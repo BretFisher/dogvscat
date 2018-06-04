@@ -17,10 +17,10 @@ services:
             # - cert-docker-dev
     deploy:
       mode: global
-    logging:
-      driver: "gelf"
-      options:
-        gelf-address: "udp://127.0.0.1:18201"
+    # logging:
+      # driver: "gelf"
+      # options:
+        # gelf-address: "udp://127.0.0.1:18201"
 
   swarm-listener:
     image: vfarcic/docker-flow-swarm-listener
@@ -37,11 +37,11 @@ services:
       placement:
         constraints:
           - node.role == manager
-    logging:
-      driver: "gelf"
-      options:
-        gelf-address: "udp://127.0.0.1:18201"
-
+    # logging:
+      # driver: "gelf"
+      # options:
+        # gelf-address: "udp://127.0.0.1:18201"
+#
 
 networks:
   proxy:

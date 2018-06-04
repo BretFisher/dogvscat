@@ -2,26 +2,6 @@ version: '3'
 
 services:
 
-  viz:
-    image: portainer/portainer
-    deploy:
-      replicas: 1
-      placement:
-        constraints: [node.role == manager]
-      labels:
-        - com.df.notify=true
-        - com.df.distribute=true
-        - com.df.serviceDomain=portainer.dogvs.cat
-        - com.df.port=9000
-    networks:
-      - proxy
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    logging:
-      driver: "gelf"
-      options:
-        gelf-address: "udp://127.0.0.1:18201"
-
 networks:
   proxy:
     external: true

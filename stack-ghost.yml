@@ -7,7 +7,6 @@ services:
     networks:
       - proxy
       - ghost
-      - logging
     environment:
       # see https://docs.ghost.org/docs/config#section-running-ghost-with-config-env-variables
       database__client: mysql
@@ -23,10 +22,10 @@ services:
         - com.df.distribute=true
         - com.df.serviceDomain=ghost.dogvs.cat
         - com.df.port=2368
-    logging:
-      driver: "gelf"
-      options:
-        gelf-address: "udp://127.0.0.1:18201"
+    # logging:
+      # driver: "gelf"
+      # options:
+        # gelf-address: "udp://127.0.0.1:18201"
 
   db:
     image: mysql:5.7
@@ -36,19 +35,16 @@ services:
       - db-password
     networks:
       - ghost
-      - logging
     environment:
       MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db-password
-    logging:
-      driver: "gelf"
-      options:
-        gelf-address: "udp://127.0.0.1:18201"
+    # logging:
+      # driver: "gelf"
+      # options:
+        # gelf-address: "udp://127.0.0.1:18201"
 
 networks:
   ghost: {}
   proxy:
-    external: true
-  logging:
     external: true
 
 volumes:

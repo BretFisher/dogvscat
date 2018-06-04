@@ -1,0 +1,49 @@
+version: "3.4"
+
+services:
+  web:
+    image: portainer/portainer
+    command: -H "tcp://tasks.agent:9001"
+    deploy:
+      replicas: 1
+      # placement:
+        # constraints: [node.role == manager]
+        # place on managers when not using agent, place on workers if using agent
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.serviceDomain=portainer.dogvs.cat
+        - com.df.port=9000
+    networks:
+      - proxy
+      - portainer
+    volumes:
+      - web:/data
+      # - /var/run/docker.sock:/var/run/docker.sock # not needed when using agent
+    # logging:
+      # driver: "gelf"
+      # options:
+        # gelf-address: "udp://127.0.0.1:18201"
+  agent:
+    image: portainer/agent
+    networks:
+      - portainer
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      mode: global
+    environment:
+      AGENT_CLUSTER_ADDR: tasks.agent
+
+
+networks:
+  proxy:
+    external: true
+  portainer: {}
+
+
+volumes:
+  web:
+    driver: rexray/dobs
+    driver_opts:
+      size: 1

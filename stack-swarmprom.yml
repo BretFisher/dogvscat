@@ -4,8 +4,6 @@ networks:
   net: {}
   proxy:
     external: true
-  logging:
-    external: true
 
 volumes:
     prometheus:
@@ -22,8 +20,6 @@ volumes:
         size: 1
 
 configs:
-  # caddy_config:
-    # file: ./caddy/Caddyfile
   dockerd_config:
     file: ./swarmprom/dockerd-exporter/Caddyfile
   node_rules:

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # create managers servers
-for server in 1 2 3 4 5; do
+for server in 1 2 3; do
 docker-machine create \
   --driver=digitalocean \
   --digitalocean-access-token="${DO_TOKEN}" \

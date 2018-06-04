@@ -25,13 +25,12 @@ services:
     configs:
       - source: logstash_config
         target: /usr/share/logstash/config/logstash.yml
-      - source: logstash_pipeline-2
+      - source: logstash_pipeline
         target: /usr/share/logstash/pipeline/logstash.conf
     environment:
       LS_JAVA_OPTS: "-Xmx256m -Xms256m"
     networks:
       - elk
-      - logging
     deploy:
       mode: replicated
       replicas: 1
@@ -53,6 +52,7 @@ services:
         - com.df.serviceDomain=kibana.dogvs.cat
         - com.df.port=5601
         - com.df.users=${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}
+      # TODO: make these secrets
 
 
 configs:
@@ -61,7 +61,7 @@ configs:
     file: ./docker-elk/elasticsearch/config/elasticsearch.yml
   logstash_config:
     file: ./docker-elk/logstash/config/logstash.yml
-  logstash_pipeline-2:
+  logstash_pipeline:
     file: ./docker-elk/logstash/pipeline/logstash.conf
   kibana_config:
     file: ./docker-elk/kibana/config/kibana.yml
@@ -69,8 +69,6 @@ configs:
 networks:
   elk:
   proxy:
-    external: true
-  logging:
     external: true
 
 volumes:
