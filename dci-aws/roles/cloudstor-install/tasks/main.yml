@@ -1,0 +1,27 @@
+---
+- name: "Check if plugin is already registered."
+  become: true
+  shell: "docker plugin inspect cloudstor"
+  register: cloudstor_plugin_status
+  failed_when: cloudstor_plugin_status.rc > 1
+  when: cloudstor_plugin_options is defined
+
+- include_tasks: "{{ os_family }}.yml"
+  when: ansible_os_family == os_family
+  tags:
+    - nfs
+  with_items:
+    - "Debian"
+    - "RedHat"
+    - "Suse"
+  loop_control:
+    loop_var: os_family
+  ignore_errors: yes
+
+- name: "Install Cloudstor plugin"
+  become: true
+  shell: docker plugin install --alias cloudstor --grant-all-permissions docker4x/cloudstor:{{cloudstor_plugin_version}} {{cloudstor_plugin_options}}
+  when:
+    - cloudstor_plugin_options is defined and
+      cloudstor_plugin_status.rc == 1
+  ignore_errors: yes

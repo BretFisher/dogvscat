@@ -1,0 +1,10 @@
+---
+
+- set_fact:
+    docker_storage_fstype: xfs
+    docker_storage_driver: devicemapper
+
+# if EE2.0
+#set_fact:
+#    docker_storage_fstype: xfs
+#    docker_storage_driver: overlay2

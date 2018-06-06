@@ -1,0 +1,48 @@
+---
+- name: "Check if DTR is already running."
+  shell: docker container ls -q --filter name=dtr-registry- --format '{% raw %}{{ .Names }} {% endraw %}'
+  register: _running
+  ignore_errors: True
+
+- name: "Set 'running' fact."
+  set_fact:
+    running: "{{ _running.stdout_lines | length > 0 }}"
+
+- name: "Uninstall."
+  when: running
+  block:
+  - include_tasks: "../get-running-replica-id.yml"
+
+  - set_fact:
+      existing_replica_id: "{{ hostvars[groups[dtr_primary][0]]['current_replica_id'] | default(docker_dtr_replica_id) }}"
+
+  - name: "Remove node from DTR."
+    shell: >
+      docker run
+      --rm
+      --name dtr-remove
+      {{ docker_dtr_image_repository }}/dtr:{{ docker_dtr_version }}
+      remove
+      --ucp-insecure-tls
+      --ucp-url "{{ docker_ucp_lb }}"
+      --ucp-username "{{ docker_ucp_username }}"
+      --ucp-password "{{ docker_ucp_admin_password }}"
+      --replica-ids "{{ current_replica_id }}"
+      --existing-replica-id "{{ existing_replica_id }}"
+    register: removed
+    ignore_errors: true
+    when: current_replica_id != existing_replica_id
+
+  - name: "Destroy DTR."
+    shell: >
+      docker run
+      --rm
+      --name dtr-destroy
+      {{ docker_dtr_image_repository }}/dtr:{{ docker_dtr_version }}
+      destroy
+      --ucp-insecure-tls
+      --ucp-url "{{ docker_ucp_lb }}"
+      --ucp-username "{{ docker_ucp_username }}"
+      --ucp-password "{{ docker_ucp_admin_password }}"
+      --replica-id "{{ current_replica_id }}"
+    when: removed|failed or removed|skipped

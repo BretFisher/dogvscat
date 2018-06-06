@@ -1,0 +1,14 @@
+---
+#
+# Get the logs.
+#
+# TODO: Add load-balancer log collection
+- hosts: all:!load-balancers
+  roles:
+  - { role: docker-ee, docker_ee_role_mode: "logs" }
+  - { role: docker-ucp, docker_ucp_role_mode: "logs" }
+  - { role: docker-dtr, docker_dtr_role_mode: "logs" }
+  tags:
+  - logs
+  - always
+  no_log: True

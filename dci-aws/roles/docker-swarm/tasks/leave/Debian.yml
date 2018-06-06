@@ -1,0 +1,25 @@
+---
+- name: "Check if the node is member of a swarm."
+  shell: "docker info | grep \"Swarm: active\""
+  register: active
+  ignore_errors: true
+
+- name: "Leave swarm."
+  when: active is succeeded and active.stdout != ""
+  block:
+  - include_tasks: "../cleanup/main.yml"
+
+  - name: "Demote node if it is a manager"
+    command: "docker node demote {{ ansible_nodename }}"
+    failed_when: False
+
+  - name: "Leave swarm."
+    command: "docker swarm leave"
+    failed_when: False
+    register: left
+
+  #Ignoring errors b/c https://github.com/moby/moby/issues/34140
+  - name: "Leave swarm (--force)."
+    command: "docker swarm leave --force"
+    ignore_errors: true
+    when: left.rc != 0

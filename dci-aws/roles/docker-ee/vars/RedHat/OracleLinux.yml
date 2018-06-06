@@ -1,0 +1,4 @@
+---
+# {{ ansible_distribution }} on RHEL is `RedHat`, not `RHEL`.
+docker_ee_repository_url: "https://storebits.docker.com/ee/{{ ansible_distribution | lower }}/{{ docker_ee_subscription }}/oraclelinux"
+docker_ee_extras_name: "{% if infra_stack == \"aws\" %}rhui-REGION-rhel-server-extras{% else %}rhel-7-server-extras-rpms{% endif %}"

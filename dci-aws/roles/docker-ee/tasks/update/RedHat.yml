@@ -1,0 +1,10 @@
+---
+#
+# Pre installation tasks.
+#
+- include_tasks: ".unix.pre.yml"
+
+#
+# Include system specific tasks.
+#
+- include_tasks: "../install/RedHat.yml"

@@ -1,0 +1,6 @@
+---
+- name: "extra"
+  hosts: workers
+  roles:
+   - role: host-readiness
+

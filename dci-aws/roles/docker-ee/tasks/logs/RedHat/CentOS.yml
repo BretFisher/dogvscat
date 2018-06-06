@@ -1,0 +1,4 @@
+---
+- name: "Get logs."
+  command: "journalctl --no-pager -u docker.service"
+  register: _logs

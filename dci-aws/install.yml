@@ -1,0 +1,192 @@
+---
+- name: "Install Ansible requirements (Python)"
+  hosts: all:!windows
+  gather_facts: False
+  roles:
+  - role: ansible-requirements
+  tags:
+  - always
+
+- name: "Make sure windows hosts can be contacted"
+  hosts: windows
+  gather_facts: False
+  any_errors_fatal: true
+  roles:
+  - role: host-readiness
+  tags:
+  - always
+  - win
+
+- hosts: all
+  roles:
+  - role: validate
+  tags:
+  - validate
+  any_errors_fatal: true
+
+- name: "Format Docker storage"
+  hosts: all:!windows
+  roles:
+  - role: docker-storage
+
+- name: "Install Docker EE"
+  hosts: all
+  roles:
+  - role: docker-ee
+  tags:
+  - engine
+  vars:
+    docker_ee_subscriptions:
+      Ubuntu: "{{ docker_ee_subscriptions_ubuntu|default(omit) }}"
+      RedHat: "{{ docker_ee_subscriptions_redhat|default(omit) }}"
+      CentOS: "{{ docker_ee_subscriptions_centos|default(omit) }}"
+      OracleLinux: "{{ docker_ee_subscriptions_oracle|default(omit) }}"
+      SLES:   "{{ docker_ee_subscriptions_sles|default(omit) }}"
+
+- import_playbook: extras.yml
+  when: use_dev_version is defined or ci_running is defined
+
+- hosts: ucp-load-balancer
+  roles:
+  - role: load-balancer
+  tags:
+  - ucp-load-balancer
+  vars:
+  - frontend: "{{ docker_ucp_lb }}"
+  - backends: "{{ groups['ucp'] }}"
+  - ports:
+    - 80
+  - ssl_ports:
+    - 443
+    - 6443
+
+- hosts: dtr-load-balancer
+  roles:
+  - role: load-balancer
+  tags:
+  - dtr-load-balancer
+  vars:
+  - frontend: "{{ docker_dtr_lb }}"
+  - backends: "{{ groups['dtr'] }}"
+  - ports:
+    - 80
+  - ssl_ports:
+    - 443
+
+- name: "Initialize Swarm"
+  hosts: ucp-primary
+  roles:
+  - role: docker-swarm
+  tags:
+  - docker_swarm
+  - docker_swarm_manager
+  - docker_swarm_leader
+  vars:
+    docker_swarm_role_mode: "init"
+
+- name: "Install UCP"
+  hosts: ucp-primary
+  roles:
+  - role: docker-ucp
+  tags:
+  - ucp
+  - UCP
+  vars:
+    docker_ucp_role_mode: "install"
+
+- name: "Join Swarm (as managers)"
+  hosts: managers:!ucp-primary
+  roles:
+  - role: docker-swarm
+  tags:
+  - docker_swarm
+  - docker_swarm_manager
+  vars:
+    docker_swarm_token_type: "swarm-manager-token"
+    docker_swarm_leader: "ucp-primary"
+    docker_swarm_role_mode: "join"
+
+- name: "Join Swarm (as workers)"
+  hosts: workers
+  roles:
+  - role: docker-swarm
+  tags:
+  - docker_swarm
+  - docker_swarm_worker
+  vars:
+    docker_swarm_token_type: "swarm-worker-token"
+    docker_swarm_leader: "ucp-primary"
+    docker_swarm_role_mode: "join"
+
+- name: "Verify Swarm state (managers only)"
+  hosts: managers
+  roles:
+  - role: docker-swarm
+  tags:
+  - docker_swarm
+  vars:
+    expected_docker_swarm_managers: "{{ groups['managers'] | length }}"
+    expected_docker_swarm_workers: "{{ groups['workers'] | length }}"
+    docker_swarm_role_mode: "validate"
+
+- name: "Install Cloudstor"
+  hosts: all:!windows
+  tags:
+  - docker_swarm
+  - cloudstor
+  roles:
+  - role: cloudstor-install
+    when: cloudstor_plugin_version != "disabled"
+
+# Add extra step for Azure
+- import_playbook: ipallocator.yml
+  when: infra_stack == "azure"
+
+- name: "Verify UCP state (managers)"
+  hosts: managers
+  roles:
+  - role: docker-ucp
+  tags:
+  - ucp
+  - UCP
+  vars:
+    docker_ucp_role_mode: "validate-managers"
+
+- name: "Verify UCP state (workers)"
+  hosts: workers
+  roles:
+  - role: docker-ucp
+  tags:
+  - ucp
+  - UCP
+  vars:
+    docker_ucp_role_mode: "validate-workers"
+
+- name: "Install DTR"
+  hosts: dtr-primary
+  roles:
+  - role: docker-dtr
+  tags:
+  - dtr
+  vars:
+    ucp_nodes: managers
+    docker_dtr_role_mode: "install"
+
+- name: "Join DTR"
+  hosts: dtr-replicas
+  roles:
+  - role: docker-dtr
+  serial: 1
+  tags:
+  - dtr
+  vars:
+    ucp_nodes: managers
+    docker_dtr_role_mode: "join"
+    dtr_primary: dtr-primary
+
+#
+# Get the logs.
+#
+- import_playbook: "logs.yml"
+# Install & Configure Load Balancers
+#

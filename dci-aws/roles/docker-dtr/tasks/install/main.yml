@@ -1,0 +1,147 @@
+---
+- name: "Check if DTR is already running."
+  shell: "docker container ls -q --filter name=dtr-registry-"
+  register: _already_running
+
+- name: "Set is_already_running fact."
+  set_fact:
+    already_running: "{{ _already_running.stdout_lines | length > 0 }}"
+    docker_primary_ucp_ip_address: "{{ hostvars[groups[ucp_nodes][0]]['ansible_host'] }}"
+
+- name: "Install DTR (version: {{ docker_dtr_version }})."
+  when: not already_running
+  block:
+  - name: "Pull DTR (version: {{ docker_dtr_version }})."
+    shell: >
+      docker image pull
+      "{{ docker_dtr_image_repository }}/dtr:{{ docker_dtr_version }}"
+    register: pulled
+    retries: 10
+    until: pulled is succeeded
+
+  - name:
+    shell: >
+      docker run
+      --rm
+      --name dtr
+      {{ docker_dtr_image_repository }}/dtr:{{ docker_dtr_version }}
+      install
+      --replica-https-port "{{ docker_dtr_https_port }}"
+      --replica-http-port "{{ docker_dtr_http_port }}"
+      --ucp-url "{{ docker_primary_ucp_ip_address }}"
+      --ucp-node "{{ ansible_nodename }}"
+      --dtr-external-url "{{ docker_dtr_lb }}"
+      --ucp-username "{{ docker_ucp_username }}"
+      --ucp-password "{{ docker_ucp_admin_password }}"
+      --ucp-insecure-tls
+      --replica-id "{{ docker_dtr_replica_id | default('') }}"
+
+  - include_tasks: "../get-running-replica-id.yml"
+
+  - name: "Reconfigure DTR."
+    when: docker_ucp_lb != docker_primary_ucp_ip_address
+    shell: >
+      docker run
+      --rm
+      --name dtr
+      {{ docker_dtr_image_repository }}/dtr:{{ docker_dtr_version }}
+      reconfigure
+      --replica-https-port "{{ docker_dtr_https_port }}"
+      --replica-http-port "{{ docker_dtr_http_port }}"
+      --dtr-external-url "{{ docker_dtr_lb }}"
+      --ucp-url "{{ docker_ucp_lb }}"
+      --ucp-username "{{ docker_ucp_username }}"
+      --ucp-password "{{ docker_ucp_admin_password }}"
+      --ucp-insecure-tls
+      --existing-replica-id "{{ current_replica_id }}"
+    retries: 20
+    delay: 10
+    register: result
+    until: result is succeeded
+  # End 'not already_running' block.
+
+# Always check DTR is accessible.
+- name: "Wait for Docker DTR to be accessible on {{ docker_dtr_https_port }}."
+  uri:
+    url: "https://{{ docker_dtr_lb }}:{{ docker_dtr_https_port }}/_ping"
+    force_basic_auth: True
+    user: "{{ docker_ucp_username }}"
+    password: "{{ docker_ucp_admin_password }}"
+    validate_certs: False
+  register: health
+  until: health.status == 200
+  retries: 20
+  delay: 10
+
+# Should we reconfigure every time?
+- name: "Configure S3 storage backend"
+  when: infra_stack == "aws"
+  uri:
+    method: "PUT"
+    url: "https://{{ docker_dtr_lb }}/api/v0/admin/settings/registry/simple"
+    status_code: 202
+    force_basic_auth: True
+    user: "{{ docker_ucp_username }}"
+    password: "{{ docker_ucp_admin_password }}"
+    validate_certs: False
+    body_format: "json"
+    body:
+      {
+        "storage": {
+          "delete": {
+            "enabled": true
+            },
+          "maintenance": {
+            "readonly": {
+              "enabled": false
+            }
+          },
+          "s3": {
+            "rootdirectory": "",
+            "region": "{{ aws_region }}",
+            "regionendpoint": "",
+            "bucket": "{{ aws_dtr_storage_bucket }}",
+            "secure": true
+          }
+        }
+      }
+  register: result
+  until: result.status == 202
+  retries: 10
+  delay: 5
+
+- name: "Configure S3 storage backend"
+  when: infra_stack == "azure"
+  uri:
+    method: "PUT"
+    url: "https://{{ docker_dtr_lb }}/api/v0/admin/settings/registry/simple"
+    status_code: 202
+    force_basic_auth: True
+    user: "{{ docker_ucp_username }}"
+    password: "{{ docker_ucp_admin_password }}"
+    validate_certs: False
+    body_format: "json"
+    body:
+      {
+        "storage": {
+          "delete": {
+            "enabled": true
+            },
+          "maintenance": {
+            "readonly": {
+              "enabled": false
+            }
+          },
+          "azure":{
+            "accountname":"{{ azure_dtr_storage_account }}",
+            "accountkey":"{{ azure_dtr_storage_key }}",
+            "container":"dtrcontainer"
+          }
+        }
+      }
+  register: result
+  until: result.status == 202
+  retries: 10
+  delay: 5
+
+- include_tasks: "../get-running-replica-id.yml"

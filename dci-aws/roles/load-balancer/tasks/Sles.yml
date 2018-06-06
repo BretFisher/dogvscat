@@ -1,0 +1,5 @@
+---
+- name: "Update firewall (SuSEfirewall2)"
+  shell:
+    /sbin/SuSEfirewall2 open EXT TCP "{{ item }}"
+  with_items:  "{{ [ 8181 ] | union(ports) | union(ssl_ports) }}"

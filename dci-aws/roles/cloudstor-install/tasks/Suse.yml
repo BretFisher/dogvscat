@@ -1,0 +1,11 @@
+---
+- name: "Install NFS support"
+  become: true
+  zypper:
+    name: nfs-client
+    state: present
+    update_cache: yes
+  when:
+    - cloudstor_plugin_options is defined
+  tags:
+    - nfs

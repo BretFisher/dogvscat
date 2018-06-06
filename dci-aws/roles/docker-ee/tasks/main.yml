@@ -1,0 +1,43 @@
+---
+#
+# Include global and platform-specific variables.
+#
+- include_vars: "main.yml"
+
+- include_vars: "{{ os_family }}.yml"
+  when: ansible_os_family == os_family
+  with_items:
+    - "Debian"
+    - "Windows"
+    - "RedHat"
+    - "Suse"
+  loop_control:
+    loop_var: os_family
+
+- include_vars: "RedHat/{{ distribution }}.yml"
+  when: distribution == ansible_distribution
+  with_items:
+    - "CentOS"
+    - "RedHat"
+    - "OracleLinux"
+  loop_control:
+    loop_var: distribution
+
+#
+# Modes.
+#
+- name: "Install."
+  include_tasks: "install/main.yml"
+  when: docker_ee_role_mode == "install"
+
+- name: "Uninstall."
+  include_tasks: "uninstall/main.yml"
+  when: docker_ee_role_mode == "uninstall"
+
+- name: "Update."
+  include_tasks: "update/main.yml"
+  when: docker_ee_role_mode == "update"
+
+- name: "Logs."
+  include_tasks: "logs/main.yml"
+  when: docker_ee_role_mode == "logs"

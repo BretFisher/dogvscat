@@ -1,0 +1,5 @@
+---
+- assert:
+    that:
+      - docker_ee_subscriptions_ubuntu is defined
+    msg: "You need 'docker_ee_subscriptions_ubuntu' defined in order to install Docker EE on Ubuntu-based hosts."

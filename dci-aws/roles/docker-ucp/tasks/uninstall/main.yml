@@ -1,0 +1,19 @@
+---
+- name: "Get InstanceID if UCP is running."
+  shell: "docker container inspect ucp-controller --format {% raw %} '{{ index .Config.Labels \"com.docker.ucp.InstanceID\" }}' {% endraw %}"
+  register: id
+  ignore_errors: true
+
+- name: "Leave UCP."
+  when: id is succeeded
+  block:
+  - name: "Leave UCP."
+    shell: >
+      docker run
+      --rm
+      --name ucp
+      --volume /var/run/docker.sock:/var/run/docker.sock
+      {{ docker_ucp_image_repository }}/ucp:{{ docker_ucp_version }}
+      uninstall-ucp
+      {% if use_dev_version | default(False) %} --image-version "dev:" {% endif %}
+      --id "{{ id.stdout_lines[0] }}"

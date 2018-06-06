@@ -1,0 +1,66 @@
+---
+- name: "Check if Windows Node is in a swarm."
+  win_shell: "docker info --format '{{ '{{' }}.Swarm.LocalNodeState {{ '}}' }}'"
+  register: swarm_node_status
+
+- name: "Prepare Windows node to join swarm"
+  when: "swarm_node_status.stdout_lines[0] == 'inactive'"
+  win_scheduled_task:
+    name: swarm-join-prep-task
+    username: SYSTEM
+    actions:
+    - path: PowerShell.exe
+      arguments: >
+        docker run
+        --rm {{ docker_ucp_image_repository }}/ucp-agent-win:{{ docker_ucp_version }}
+        windows-script
+        {% if use_dev_version | default(False) %} --image-version dev: {% endif %}
+        | powershell -noprofile -noninteractive -command 'Invoke-Expression -Command $input'
+    - path: cmd.exe
+      arguments: /c schtasks.exe /Delete /TN "swarm-join-prep-task" /F
+    triggers:
+    - type: registration
+
+- name: "Wait for Windows node to be prepared to join swarm"
+  when: "swarm_node_status.stdout_lines[0] == 'inactive'"
+  win_scheduled_task_stat:
+    name: swarm-join-prep-task
+  register: prepare_task_stat
+  until: (prepare_task_stat.state is defined and prepare_task_stat.state.status != "TASK_STATE_RUNNING") or (prepare_task_stat.task_exists == False)
+  retries: 1000
+  delay: 10
+
+- name: "Join Windows node to swarm"
+  when: "swarm_node_status.stdout_lines[0] == 'inactive'"
+  win_scheduled_task:
+    name: swarm-join-task
+    username: SYSTEM
+    actions:
+    - path: PowerShell.exe
+      arguments: >
+        docker swarm join
+        --token {{ hostvars[groups[docker_swarm_leader][0]][docker_swarm_token_type].stdout }}
+        {{ docker_swarm_listen_address | default(hostvars[groups[docker_swarm_leader][0]]['ansible_default_ipv4']['address']) }}
+    - path: cmd.exe
+      arguments: /c schtasks.exe /Delete /TN "swarm-join-task" /F
+    triggers:
+    - type: registration
+
+- name: "Wait for the Windows node network to stabilize"
+  wait_for_connection:
+    delay: 20
+
+- name: "Wait for the Windows node to join the swarm"
+  when: "swarm_node_status.stdout_lines[0] == 'inactive'"
+  win_scheduled_task_stat:
+    name: swarm-join-task
+  register: task_stat
+  until: (task_stat.state is defined and task_stat.state.status != "TASK_STATE_RUNNING") or (task_stat.task_exists == False)
+  retries: 30
+  delay: 10
+
+- name: "Check if join succeeded"
+  when: "swarm_node_status.stdout_lines[0] == 'inactive'"
+  win_shell: "docker info --format '{{ '{{' }}.Swarm.LocalNodeState {{ '}}' }}'"
+  register: swarm_node_status_after_join
+  failed_when: "swarm_node_status_after_join.stdout_lines[0] == 'inactive'"

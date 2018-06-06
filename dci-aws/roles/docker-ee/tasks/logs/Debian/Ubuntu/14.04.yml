@@ -1,0 +1,4 @@
+---
+- name: "Get logs."
+  command: bash -c "cat /var/log/syslog | grep -i docker"
+  register: _logs

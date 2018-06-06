@@ -1,0 +1,23 @@
+---
+- name: "Get logs ({{ ansible_os_family }})."
+  include_tasks: "{{ os_family }}.yml"
+  when: ansible_os_family == os_family
+  with_items:
+    - "Debian"
+    - "RedHat"
+    - "Suse"
+    - "Windows"
+  loop_control:
+    loop_var: os_family
+
+- name: "Create folders."
+  local_action:
+    module: file
+    path: "{{ docker_logs_directory }}/{{ ansible_nodename }}"
+    state: directory
+
+- name: "Save logs to file."
+  local_action:
+    module: copy
+    content: "{{ _logs.stdout_lines | join('\n') | string }}"
+    dest: "{{ docker_logs_directory }}/{{ ansible_nodename }}/engine.log"

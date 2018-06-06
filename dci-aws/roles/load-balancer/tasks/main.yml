@@ -1,0 +1,61 @@
+---
+- set_fact:
+    cert: ""
+    cert_bindmount: ""
+
+- name: "Check for certificate."
+  local_action: stat path="{{ role_path }}/../../{{ docker_ucp_certificate_directory }}/cert.pem"
+  become: False
+  register: certificate_stat
+
+- name: "Copy certificate."
+  copy:
+    src: "{{ role_path }}/../../{{ docker_ucp_certificate_directory }}/{{ item }}"
+    dest: "/etc/ssl/{{ item }}"
+  with_items:
+    - "ca.pem"
+    - "cert.pem"
+    - "key.pem"
+  when: certificate_stat.stat.exists == true
+
+# HAProxy is very particular about its certs
+- name: "Generate combined certificate."
+  shell: "cat /etc/ssl/key.pem /etc/ssl/cert.pem /etc/ssl/ca.pem > /etc/ssl/combined.pem"
+  when: certificate_stat.stat.exists == true
+
+- set_fact:
+    cert: "crt /etc/ssl/combined.pem"
+    cert_bindmount: "--volume /etc/ssl/combined.pem:/etc/ssl/combined.pem:ro"
+  when: certificate_stat.stat.exists == true
+
+- name: "Configure HAProxy."
+  template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy.cfg
+    mode: 0644
+  register: config
+
+- include_tasks: "{{ os_family }}.yml"
+  when: ansible_os_family == os_family
+  tags:
+    - jq
+  with_items:
+    - "Debian"
+    - "RedHat"
+  loop_control:
+    loop_var: os_family
+
+- set_fact: portlist=""
+
+- name: "Generate Port List."
+  set_fact: portlist="{{portlist}} --expose {{port}} --publish {{port}}:{{port}}"
+  with_items: "{{ [ 8181 ] | union(ports) | union(ssl_ports) }}"
+  loop_control:
+    loop_var: port
+
+- name: "Remove existing HAProxy Container."
+  shell: "docker stop --time 60 load-balancer; docker rm -f load-balancer"
+  failed_when: False
+
+- name: "Start HAProxy Container."
+  shell: "docker run --name load-balancer --detach --restart unless-stopped {{ cert_bindmount }} --volume /etc/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro {{ portlist }} haproxy:1.8-alpine haproxy -d -f /usr/local/etc/haproxy/haproxy.cfg"

@@ -1,0 +1,31 @@
+---
+- name: "Check if DTR is already running."
+  shell: docker container ls -q --filter name=dtr-registry- --format '{% raw %}{{ .Names }} {% endraw %}'
+  register: _running
+  ignore_errors: True
+
+- name: "Set 'running' fact."
+  set_fact:
+    running: "{{ _running.stdout_lines | length > 0 }}"
+
+- name: "Get replica id"
+  shell: "echo {{ _running.stdout_lines[0] }} | cut -d'-' -f3"
+  register: _replica_id
+  when: running
+
+- name: "Set 'current_replica_id' fact."
+  set_fact:
+    current_replica_id: "{{ _replica_id.stdout_lines[0] }}"
+  when: running
+
+- name: "Get logs."
+  shell: "docker logs {{ container }}"
+  register: _logs
+  with_items:
+    - "dtr-api-{{ current_replica_id }}"
+    - "dtr-registry-{{ current_replica_id }}"
+    - "dtr-garant-{{ current_replica_id }}"
+  ignore_errors: True
+  loop_control:
+    loop_var: container
+  when: running

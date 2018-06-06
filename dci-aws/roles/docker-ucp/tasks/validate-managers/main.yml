@@ -1,0 +1,20 @@
+---
+- name: "Wait for Docker UCP to be accessible on 443."
+  wait_for:
+    port: 443
+    timeout: 600
+
+# Sometimes, even if the port is open, we get a HTTP 500 (Internal Server
+# Error). Sleep a few seconds to make sure we aren't too fast for UCP.
+- name: "Sleep (5 seconds)."
+  wait_for:
+    timeout: 5
+
+- name: "Wait for Docker UCP to be accessible via {{ ansible_host }}."
+  uri:
+    url: "https://{{ ansible_host }}/_ping"
+    validate_certs: False
+  register: health
+  until: health.status == 200
+  retries: 20
+  delay: 10

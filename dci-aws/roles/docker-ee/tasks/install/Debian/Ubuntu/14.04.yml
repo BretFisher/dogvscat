@@ -1,0 +1,83 @@
+---
+- name: "Discover where /var/lib/ is mounted"
+  shell:
+    "df -h /var/lib/ | grep /dev/ | awk '{print $6}'"
+  register: root_mount_point_check
+
+- set_fact:
+    root_mount_point: "{{ root_mount_point_check.stdout }}"
+
+- name: "Check if {{ root_mount_point }} is a shared mount"
+  shell:
+    "cat /proc/1/mountinfo | grep shared | grep '/ {{ root_mount_point }} ' | awk '{ print $5 }'"
+  register: root_shared_mountpoint_check
+
+- set_fact:
+    root_shared_mountpoint: "{{ root_shared_mountpoint_check.stdout }}"
+
+- name: "Make {{ root_mount_point }} a shared mount"
+  become: true
+  when: root_mount_point != root_shared_mountpoint
+  shell:
+    "mount --make-shared {{ root_mount_point }}"
+
+- name: "Create upstart to root shared on startup"
+  become: true
+  when: root_mount_point != root_shared_mountpoint
+  copy:
+    content: |
+      # This makes the root filesystem shared so the kubelet
+      # containers can properly bind mount volumes
+      description     "Make root's volume shared"
+      start on startup
+      task
+      exec mount --make-shared {{ root_mount_point }}
+    dest: /etc/init/mount-shared-root.conf
+
+- name: "Verify {{ root_mount_point }} is shared"
+  shell:
+    "cat /proc/1/mountinfo | grep shared | grep '/ {{ root_mount_point }} ' | awk '{ print $5 }'"
+  register: verify_shared_check
+  failed_when: verify_shared_check.stdout != root_mount_point
+
+- name: "Discover where /var/lib/docker is mounted"
+  shell:
+    "df -h /var/lib/docker | grep /dev/ | awk '{print $6}'"
+  register: docker_mount_point_check
+
+- set_fact:
+    docker_mount_point: "{{ docker_mount_point_check.stdout }}"
+
+- name: "Check if {{ docker_mount_point }} is a shared mount"
+  shell:
+    "cat /proc/1/mountinfo | grep shared | grep '/ {{ docker_mount_point }} ' | awk '{ print $5 }'"
+  register: shared_mountpoint_check
+
+- set_fact:
+    shared_mountpoint: "{{ shared_mountpoint_check.stdout }}"
+
+- name: "Make {{ docker_mount_point }} a shared mount"
+  become: true
+  when: docker_mount_point != shared_mountpoint
+  shell:
+    "mount --make-shared {{ docker_mount_point }}"
+
+- name: "Create upstart to make root volume shared on startup"
+  become: true
+  when: docker_mount_point != shared_mountpoint
+  copy:
+    content: |
+      # This makes the root filesystem shared so the kubelet
+      # containers can properly bind mount volumes
+      description     "Make root volume shared"
+      start on startup
+      task
+      exec mount --make-shared {{ docker_mount_point }}
+    dest: /etc/init/mount-shared-docker.conf
+
+- name: "Verify {{ docker_mount_point }} is shared"
+  shell:
+    "cat /proc/1/mountinfo | grep shared | grep '/ {{ docker_mount_point }} ' | awk '{ print $5 }'"
+  register: verify_shared_check
+  failed_when: verify_shared_check.stdout != docker_mount_point
+

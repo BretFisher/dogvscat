@@ -1,0 +1,10 @@
+---
+- name: Check if already active.
+  command: "docker info --format '{{ '{{' }}.Swarm.LocalNodeState {{ '}}' }}'"
+  register: _swarm_node_status
+
+- name: "Host is not a part the swarm yet."
+  when: _swarm_node_status.stdout == "inactive"
+  block:
+  - name: Join Docker Swarm.
+    command: docker swarm join --token "{{ hostvars[groups[docker_swarm_leader][0]][docker_swarm_token_type].stdout }}" "{{ docker_swarm_listen_address | default(hostvars[groups[docker_swarm_leader][0]]['ansible_default_ipv4']['address']) }}"

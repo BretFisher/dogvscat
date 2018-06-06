@@ -1,0 +1,90 @@
+---
+- name: "Check if UCP is running."
+  shell: "docker ps -q --filter name=ucp-controller"
+  register: _ucp_already_running
+
+- name: "Set ucp_already_running fact."
+  set_fact:
+    ucp_already_running: "{{ _ucp_already_running.stdout_lines | length > 0 }}"
+
+- name: "Install."
+  when: "not ucp_already_running"
+  block:
+  - name: "Pull UCP (version: {{ docker_ucp_version }})."
+    shell: >
+      docker image pull
+      "{{ docker_ucp_image_repository }}/ucp:{{ docker_ucp_version }}"
+    register: pulled
+    retries: 10
+    until: pulled is succeeded
+
+  - name: "Check for certificate  (at {{ docker_ucp_certificate_directory }}/cert.pem)."
+    local_action: stat path="{{ docker_ucp_certificate_directory }}/cert.pem"
+    become: no
+    register: certificate_stat
+
+  - name: "Import certificates."
+    when: certificate_stat.stat.exists == true
+    block:
+    # Start block (certificates exist).
+    - name: "Create volume for certificates."
+      docker_volume:
+        name: ucp-controller-server-certs
+        state: present
+      register: volume_created
+
+    - name: "Get volume path."
+      shell: "docker volume inspect ucp-controller-server-certs --format {% raw %}'{{ .Mountpoint }}'{% endraw %}"
+      register: certificates_volume
+      when: volume_created is succeeded
+
+    - name: "Copy certificate"
+      copy:
+        src: "{{ docker_ucp_certificate_directory }}/{{ file }}"
+        dest: "{{ certificates_volume.stdout_lines[0] }}"
+      with_items:
+        - "ca.pem"
+        - "cert.pem"
+        - "key.pem"
+      loop_control:
+        loop_var: file
+      when: volume_created is succeeded
+    # End block (certificates exist).
+
+  - name: "Check for license file (at {{ docker_ucp_license_path }})."
+    local_action: stat path="{{ docker_ucp_license_path }}"
+    become: no
+    register: license_stat
+
+  - set_fact:
+      subscription_file: "{{ docker_ucp_license_path | basename }}"
+
+  - name: "Read license file."
+    when: license_stat.stat.exists == true
+    block:
+    # Start block (license file exists).
+    - name: "Copy subscription."
+      copy:
+        src: "{{ docker_ucp_license_path }}"
+        dest: "/tmp/"
+
+  - block:
+    # Start block (rescue).
+      - name: "Install UCP (version: {{ docker_ucp_version }})."
+        shell: >
+          docker run
+          --rm
+          --name ucp
+          --volume /var/run/docker.sock:/var/run/docker.sock
+          {% if license_stat.stat.exists == true %} --volume "/tmp/{{ subscription_file}}:/config/docker_subscription.lic:ro" {% endif %}
+          --env "UCP_ADMIN_USERNAME={{ docker_ucp_admin_username }}"
+          --env "UCP_ADMIN_PASSWORD={{ docker_ucp_admin_password }}"
+          {{ docker_ucp_image_repository }}/ucp:{{ docker_ucp_version }}
+          install
+          {% if use_dev_version | default(False) %} --image-version "dev:" {% endif %}
+          --host-address "{{ docker_swarm_listen_address | default(ansible_default_ipv4['address']) }}"
+          --san "{{ docker_ucp_lb }}"
+          {% if ansible_host != docker_ucp_lb %} --san "{{ ansible_host }}" {% endif %}
+    # End block (rescue).
+    rescue:
+      - shell: docker logs ucp-reconcile | tee ucp-reconcile.log

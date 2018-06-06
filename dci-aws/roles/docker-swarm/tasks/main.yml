@@ -1,0 +1,28 @@
+---
+#
+# Init.
+#
+- name: "Initialize."
+  include_tasks: "init/main.yml"
+  when: docker_swarm_role_mode == "init"
+
+#
+# Join.
+#
+- name: "Join."
+  include_tasks: "join/main.yml"
+  when: docker_swarm_role_mode == "join"
+
+#
+# Validate.
+#
+- name: "Validate."
+  include_tasks: "validate/main.yml"
+  when: docker_swarm_role_mode == "validate"
+
+#
+# Leave.
+#
+- name: "Leave."
+  include_tasks: "leave/main.yml"
+  when: docker_swarm_role_mode == "leave"

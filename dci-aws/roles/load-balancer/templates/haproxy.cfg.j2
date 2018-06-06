@@ -1,0 +1,50 @@
+global
+  log /dev/log  local0
+  log /dev/log  local1 notice
+
+defaults
+  log  global
+  mode  http
+  option  httplog
+  option  dontlognull
+  timeout connect 5000
+  timeout client  50000
+  timeout server  50000
+
+listen stats
+  bind :8181
+  mode http
+  stats enable
+  stats hide-version
+  stats realm Haproxy\ Statistics
+  stats uri /
+
+{% for port in ports %}
+frontend {{ port }}
+  mode tcp
+  option  tcplog
+  bind :{{ port }}
+  default_backend upstream_servers_{{ port }}
+
+backend upstream_servers_{{ port }}
+  mode tcp
+  option httpchk GET /_ping HTTP/1.1\r\nHost:\ {{ frontend }}
+{% for backend in backends %}
+  server {{ backend }} {{ hostvars[backend].ansible_host }}:{{ port }} weight 100 check
+{% endfor %}
+{% endfor %}
+
+{% for port in ssl_ports %}
+frontend {{ port }}
+  mode tcp
+  option  tcplog
+  bind :{{ port }} {{ cert }}
+  default_backend upstream_servers_{{ port }}
+
+backend upstream_servers_{{ port }}
+  mode tcp
+  option httpchk GET /_ping HTTP/1.1\r\nHost:\ {{ frontend }}
+{% for backend in backends %}
+  server {{ backend }} {{ hostvars[backend].ansible_host }}:{{ port }} weight 100 check check-ssl verify none
+{% endfor %}
+{% endfor %}

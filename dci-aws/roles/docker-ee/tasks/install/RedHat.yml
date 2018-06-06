@@ -1,0 +1,265 @@
+---
+#
+# Pre installation tasks.
+#
+- include_tasks: ".unix.pre.yml"
+
+#
+# Update Kernel
+#
+- name: "Get Kernel version"
+  shell:
+    uname -r | sed -e $'s/[\.-]/\\\n/g'
+  register: kernel_shell_output
+
+- name: "Splitting out kernel version elements"
+  set_fact:
+    kernel_major: "{{ kernel_shell_output.stdout_lines[0] }}"
+    kernel_minor: "{{ kernel_shell_output.stdout_lines[1] }}"
+    kernel_maint: "{{ kernel_shell_output.stdout_lines[2] }}"
+    kernel_patch: "{{ kernel_shell_output.stdout_lines[3] }}"
+
+- name: "Setting fact if kernel is < 3.10.x-514"
+  set_fact:
+    kernel_needs_update: "( {{ kernel_major | int }} <= 3 ) and ( {{ kernel_minor | int }} <= 10 ) and ( {{ kernel_patch | int }} <  514 ) "
+
+- name: "Update if kernel < 3.10.0-514"
+  become: true
+  yum:
+    name: "kernel"
+    state: latest
+    update_cache: true
+  when: kernel_needs_update
+
+- name: Reboot the server
+  become: true
+  shell: /usr/bin/systemd-run --on-active=10 /usr/bin/systemctl --force reboot
+  async: 0
+  poll: 0
+  when: kernel_needs_update
+
+- name: Wait for server to shutdown
+  local_action: shell /usr/bin/nc -z {{ ansible_host }} 22
+  register: result
+  until: result.rc != 0
+  failed_when: result.rc == -1
+  retries: 120
+  delay: 1
+  when: kernel_needs_update
+
+- name: Wait for server to be ready
+  local_action: shell /usr/bin/nc -z {{ ansible_host }} 22
+  register: result
+  until: result.rc == 0
+  retries: 200
+  delay: 3
+  when: kernel_needs_update
+
+#
+# Install dependencies.
+#
+- name: "Add Docker EE URL to yum."
+  copy:
+    content: "{{ docker_ee_repository_url }}"
+    dest: /etc/yum/vars/dockerurl
+
+- name: "Install dependencies."
+  yum:
+    name: "{{ package }}"
+    state: present
+  with_items:
+    - yum-utils
+    - device-mapper-persistent-data
+    - lvm2
+    - "{% if infra_stack == \"aws\" %}chrony{% else %}ntp{% endif %}"
+  loop_control:
+    loop_var: package
+  retries: 30
+  delay: 10
+  register: install_dependencies
+  until: install_dependencies.rc == 0
+
+#
+# Chrony configuration on AWS
+#
+- name: "Configure chrony on AWS"
+  when: infra_stack == "aws"
+  lineinfile:
+    line: "server 169.254.169.123 prefer iburst"
+    path: "/etc/chrony.conf"
+
+- name: "Remove existing pool config on AWS"
+  when: infra_stack == "aws"
+  lineinfile:
+    regexp: "^pool.*"
+    line: ""
+    path: "/etc/chrony.conf"
+
+- name: "Enable chrony service on AWS"
+  when: infra_stack == "aws"
+  service:
+    name: "chronyd"
+    enabled: "yes"
+    state: "restarted"
+
+
+- name: "Enable extras"
+  shell:
+    yum-config-manager --enable "{{ docker_ee_extras_name }}"
+
+- name: "Enable options"
+  shell:
+    yum-config-manager --enable "rhel-7-server-optional-rpms"
+#
+# Add repository to yum.
+#
+- name: "Add Docker GPG key (from {{ docker_ee_repository_url }}/gpg }}."
+  rpm_key:
+    key: "{{ docker_ee_repository_url }}/gpg"
+    state: present
+  register: add_repository_key
+  ignore_errors: true
+
+- name: "Ensure curl is present (on older systems without SNI)."
+  yum:
+    name: curl
+    state: latest
+  when: add_repository_key is failed
+
+- name: "Download GPG key (alternative for older systems without SNI)."
+  shell: "curl -sSL {{ docker_ee_repository_url }}/gpg -o /tmp/storebits.gpg"
+  args:
+    warn: no
+  when: add_repository_key is failed
+
+- name: "Add Docker apt key (alternative for older systems without SNI)."
+  shell: "rpm --import /tmp/storebits.gpg"
+  args:
+    warn: no
+  when: add_repository_key is failed
+
+- name: "Add Docker EE repository {{ docker_ee_release_channel }}-{{ docker_ee_version }}."
+  yum_repository:
+    name: "docker-ee.repo"
+    description: "Add Docker EE repository"
+    baseurl: "{{ docker_ee_repository_url }}/{{ ansible_distribution_major_version }}/x86_64/{{ docker_ee_repository }}"
+    state: present
+
+- name: "Install Docker EE (version: {{ docker_ee_version }})."
+  yum:
+    name: "{{ docker_ee_package }}"
+    state: present
+    disable_gpg_check: true
+  retries: 30
+  delay: 10
+  register: install_docker_ee
+  until: install_docker_ee.rc == 0
+
+- name: "Check for firewalld"
+  shell: "systemctl is-active firewalld --quiet"
+  register: firewalld_active_result
+  failed_when: False
+
+- name: "Set firewalld_active fact"
+  set_fact:
+    firewalld_active: "{{firewalld_active_result.rc == 0}}"
+
+- name: "Open ports in firewalld for Docker EE"
+  firewalld:
+    port: "{{ item.port }}/{{ item.protocol }}"
+    permanent: true
+    state: enabled
+  when: firewalld_active
+  with_items:
+    - name: "Port for SSH"
+      port: 22
+      protocol: tcp
+    - name: "Port for the UCP web UI and API"
+      port: 80
+      protocol: tcp
+    - name: "BGPPort"
+      port: 179
+      protocol: tcp
+    - name: "Port for the UCP web UI and API"
+      port: 443
+      protocol: tcp
+    - name: "Port for the Docker Swarm manager. Used for backwards compatibility"
+      port: 2376
+      protocol: tcp
+    - name: "Port for communication between swarm nodes"
+      port: 2377
+      protocol: tcp
+    - name: "Port for overlay networking (udp)"
+      port: 4789
+      protocol: udp
+    - name: "KubeAPIServerPort"
+      port: 6443
+      protocol: tcp
+    - name: "KubeReverseProxyPort"
+      port: 6444
+      protocol: tcp
+    - name: "Port for gossip-based clustering (tcp)"
+      port: 7946
+      protocol: tcp
+    - name: "Port for gossip-based clustering (udp)"
+      port: 7946
+      protocol: udp
+    - name: "Port for kubelet"
+      port: 10250
+      protocol: tcp
+    - name: "Port for a TLS proxy that provides access to UCP, Docker Engine, and Docker Swarm"
+      port: 12376
+      protocol: tcp
+    - name: "EtcdReverseProxyPort"
+      port: 12378
+      protocol: tcp
+    - name: "Port for internal node configuration, cluster configuration, and HA"
+      port: 12379
+      protocol: tcp
+    - name: "Port for internal node configuration, cluster configuration, and HA"
+      port: 12380
+      protocol: tcp
+    - name: "Port for the certificate authority"
+      port: 12381
+      protocol: tcp
+    - name: "Port for the UCP certificate authority"
+      port: 12382
+      protocol: tcp
+    - name: "Port for the authentication storage backend"
+      port: 12383
+      protocol: tcp
+    - name: "Port for the authentication storage backend for replication across managers"
+      port: 12384
+      protocol: tcp
+    - name: "Port for the authentication service API"
+      port: 12385
+      protocol: tcp
+    - name: "Port for the authentication worker"
+      port: 12386
+      protocol: tcp
+    - name: "Port for the metrics service"
+      port: 12387
+      protocol: tcp
+
+- name: "Open ports in firewalld for Docker EE"
+  firewalld:
+    service: nfs
+    permanent: true
+    state: enabled
+  when: firewalld_active
+
+- name: Restart Firewalld Service
+  service:
+    name: firewalld
+    state: restarted
+  when: firewalld_active
+
+- name: Check the Firewall Port status
+  shell:
+    firewall-cmd --list-all
+  when: firewalld_active
+#
+# Post installation tasks.
+#
+
+- include_tasks: ".unix.post.yml"

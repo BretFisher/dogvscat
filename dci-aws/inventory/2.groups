@@ -1,0 +1,59 @@
+#
+# High-level hosts (do not edit).
+#
+
+# UCP.
+[ucp-primary:children]
+linux-ucp-manager-primary
+
+[linux-ucp:children]
+linux-ucp-manager-primary
+linux-ucp-manager-replicas
+
+[ucp:children]
+linux-ucp
+
+# DTR.
+[dtr-primary:children]
+linux-dtr-worker-primary
+
+[dtr-replicas:children]
+linux-dtr-worker-replicas
+
+[linux-dtr:children]
+linux-dtr-worker-primary
+linux-dtr-worker-replicas
+
+[dtr:children]
+linux-dtr
+
+# Linux.
+[linux-managers:children]
+linux-ucp
+
+[linux-workers:children]
+linux-dtr
+
+[linux:children]
+linux-managers
+linux-workers
+ucp-load-balancer
+dtr-load-balancer
+
+# Windows
+[windows:children]
+windows-workers
+
+# Managers.
+[managers:children]
+ucp-primary
+linux-managers
+
+# Workers.
+[workers:children]
+linux-workers
+windows-workers
+
+[load-balancers:children]
+ucp-load-balancer
+dtr-load-balancer

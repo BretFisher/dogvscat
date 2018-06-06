@@ -1,0 +1,34 @@
+---
+- name: "Pull DTR (version: {{ docker_dtr_version }})."
+  shell: >
+    docker image pull
+    "{{ docker_dtr_image_repository }}/dtr:{{ docker_dtr_version }}"
+  register: pulled
+  retries: 10
+  until: pulled is succeeded
+
+# FIXME: Give a safer filter (e.g. including the replica-id).
+- name: "Check if DTR is already running."
+  shell: "docker container ls -q --filter name=dtr-registry-"
+  register: _already_running
+
+- name: "Set is_already_running fact."
+  set_fact:
+    already_running: "{{ _already_running.stdout_lines | length > 0 }}"
+    docker_primary_ucp_ip_address: "{{ hostvars[groups[ucp_nodes][0]]['ansible_host'] }}"
+    existing_replica_id: "{{ hostvars[groups[dtr_primary][0]]['current_replica_id'] | default(docker_dtr_replica_id) }}"
+
+- name: "Join DTR replica (version: {{ docker_dtr_version }})."
+  shell: >
+    docker run
+    --rm
+    --name dtr
+    {{ docker_dtr_image_repository }}/dtr:{{ docker_dtr_version }}
+    join
+    --ucp-url "{{ docker_primary_ucp_ip_address }}"
+    --ucp-node "{{ ansible_nodename }}"
+    --ucp-username "{{ docker_ucp_username }}"
+    --ucp-password "{{ docker_ucp_admin_password }}"
+    --ucp-insecure-tls
+    --existing-replica-id "{{ existing_replica_id }}"
+  when: not already_running

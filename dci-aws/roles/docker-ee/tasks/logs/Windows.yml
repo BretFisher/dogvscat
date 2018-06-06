@@ -1,0 +1,4 @@
+---
+- name: "Get logs."
+  win_shell: Get-EventLog -LogName Application -Source Docker -After (Get-Date).AddHours(-1)  # | Sort-Object Time
+  register: _logs

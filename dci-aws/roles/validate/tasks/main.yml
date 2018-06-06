@@ -1,0 +1,14 @@
+---
+- include_tasks: "{{ ansible_os_family }}.yml"
+  when: ansible_os_family == os_family
+  with_items:
+    - "Debian"
+    - "Windows"
+    - "RedHat"
+    - "Suse"
+  loop_control:
+    loop_var: os_family
+
+- assert:
+    that: docker_ucp_admin_password is defined
+    msg: "'docker_ucp_admin_password' is mandatory."

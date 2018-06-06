@@ -1,0 +1,5 @@
+---
+- assert:
+    that:
+      - docker_ee_subscriptions_sles is defined
+    msg: "You need 'docker_ee_subscriptions_sles' defined in order to install Docker EE on Suse-based hosts."

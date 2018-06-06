@@ -1,0 +1,3 @@
+---
+docker_ucp_image_repository: docker
+docker_ucp_version: latest

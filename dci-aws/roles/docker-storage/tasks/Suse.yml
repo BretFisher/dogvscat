@@ -1,0 +1,5 @@
+---
+
+- set_fact:
+    docker_storage_fstype: btrfs
+    docker_storage_driver: btrfs

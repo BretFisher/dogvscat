@@ -1,0 +1,70 @@
+---
+- name: "Get replica id"
+  hosts: dtr-primary
+  roles:
+  - role: docker-dtr
+  tags:
+  - dtr
+  - DTR
+  vars:
+    docker_dtr_role_mode: "get-running-replica-id"
+
+- name: "Uninstall DTR"
+  hosts: dtr:!dtr-primary
+  roles:
+  - role: docker-dtr
+  tags:
+  - dtr
+  - DTR
+  serial: 1
+  vars:
+    docker_dtr_role_mode: "uninstall"
+    ucp_nodes: managers
+    dtr_primary: dtr-primary
+
+- hosts: dtr-primary
+  roles:
+  - role: docker-dtr
+  tags:
+  - dtr
+  - DTR
+  vars:
+    docker_dtr_role_mode: "uninstall"
+    ucp_nodes: managers
+    dtr_primary: dtr-primary
+
+- name: "Uninstall UCP"
+  hosts: ucp-primary
+  roles:
+  - role: docker-ucp
+  tags:
+  - ucp
+  - UCP
+  vars:
+    docker_ucp_role_mode: "uninstall"
+
+- name: "Leave swarm"
+  hosts: workers
+  roles:
+  - role: docker-swarm
+  tags:
+  - swarm
+  vars:
+    docker_swarm_role_mode: "leave"
+
+- hosts: managers
+  roles:
+  - role: docker-swarm
+  tags:
+  - swarm
+  vars:
+    docker_swarm_role_mode: "leave"
+
+- name: "Uninstall Docker EE"
+  hosts: all
+  roles:
+  - role: docker-ee
+  tags:
+  - engine
+  vars:
+    docker_ee_role_mode: "uninstall"

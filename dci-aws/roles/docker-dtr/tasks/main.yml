@@ -1,0 +1,42 @@
+---
+#
+# Install.
+#
+- name: "Install."
+  include_tasks: "install/main.yml"
+  when: docker_dtr_role_mode == "install"
+
+#
+# Update.
+#
+- name: "Update."
+  include_tasks: "update/main.yml"
+  when: docker_dtr_role_mode == "update"
+
+#
+# Join.
+#
+- name: "Join."
+  include_tasks: "join/main.yml"
+  when: docker_dtr_role_mode == "join"
+
+#
+# Get-Running-Replica-Id.
+#
+- name: "Get running replica id."
+  include_tasks: "get-running-replica-id.yml"
+  when: docker_dtr_role_mode == "get-running-replica-id"
+
+#
+# Uninstall.
+#
+- name: "Uninstall."
+  include_tasks: "uninstall/main.yml"
+  when: docker_dtr_role_mode == "uninstall"
+
+#
+# Pull logs.
+#
+- name: "Logs."
+  include_tasks: "logs/main.yml"
+  when: docker_dtr_role_mode == "logs"

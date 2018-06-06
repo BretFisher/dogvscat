@@ -1,0 +1,83 @@
+---
+
+- meta: end_play
+  when: docker_storage_volume is not defined
+
+- name: "Installation ( {{ ansible_os_family }} )."
+  include_tasks: "{{ os_family }}.yml"
+  when: ansible_os_family == os_family
+  with_items:
+    - "Debian"
+    - "RedHat"
+    - "Suse"
+  loop_control:
+    loop_var: os_family
+
+## EE 17.06
+#
+#if rhel
+#  docker_storage_fstype = xfs
+#  docker_storage_driver = overlay2
+#if centos7
+#  docker_storage_fstype = xfs
+#  docker_storage_driver = devicemapper
+#if ubuntu
+#  docker_storage_fstype = ext4
+#  docker_storage_driver = aufs3
+#if sles
+#  docker_storage_fstype = btrfs
+#  docker_storage_driver = btrfs
+#if oracle
+#  docker_storage_fstype = btrfs
+#  docker_storage_driver = devicemapper
+#
+## EE 2.0
+#
+#if rhel
+#  docker_storage_fstype = xfs
+#  docker_storage_driver = overlay2
+#if centos7
+#  docker_storage_fstype = xfs
+#  docker_storage_driver = overlay2
+#if ubuntu 14.04
+#  docker_storage_fstype = ext4
+#  docker_storage_driver = aufs3
+#if ubuntu 16.04
+#  docker_storage_fstype = ext4
+#  docker_storage_driver = overlay2
+#if sles
+#  docker_storage_fstype = btrfs
+#  docker_storage_driver = btrfs
+#if oracle
+#  docker_storage_fstype = xfs
+#  docker_storage_driver = overlay2
+
+- set_fact:
+    mkfs_opts: ""
+
+- name: "mkfs opts"
+  when: docker_storage_fstype == 'xfs'
+  set_fact:
+    mkfs_opts: "-n ftype=1"
+
+- name: "mkfs.{{ docker_storage_fstype }}"
+  filesystem:
+    dev: "{{ docker_storage_volume }}"
+    force: "no"
+    opts: "{{ mkfs_opts }}"
+    fstype: "{{ docker_storage_fstype }}"
+
+- name: "Mount /var/lib/docker"
+  mount:
+    fstype: "{{ docker_storage_fstype }}"
+    path: "/var/lib/docker"
+    src: "{{ docker_storage_volume }}"
+    state: "mounted"
+
+- when: docker_ee_daemon_options is not defined
+  set_fact:
+    docker_ee_daemon_options: { }
+
+- name: "Add storage-driver={{ docker_storage_driver }} to docker_ee_daemon_options."
+  set_fact:
+    docker_ee_daemon_options: "{{ docker_ee_daemon_options|combine({ 'storage-driver': docker_storage_driver }) }}"

@@ -1,0 +1,9 @@
+---
+- include_tasks: "RedHat/{{ distribution }}.yml"
+  when: ansible_distribution == distribution
+  with_items:
+    - "CentOS"
+    - "OracleLinux"
+    - "RedHat"
+  loop_control:
+    loop_var: distribution

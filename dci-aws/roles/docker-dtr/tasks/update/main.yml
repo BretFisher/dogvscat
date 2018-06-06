@@ -1,0 +1,55 @@
+---
+- name: "Check if DTR is running."
+  shell: docker container ls -q --filter name=dtr-registry- --format '{% raw %}{{ .Names }} {% endraw %}'
+  register: _running
+  ignore_errors: True
+
+- name: "Set is_already_running fact."
+  set_fact:
+    running: "{{ _running.stdout_lines | length > 0 }}"
+
+#
+# Exit if DTR is not running.
+#
+- name: "Check if DTR is running."
+  meta: end_play
+  when: not running
+
+#
+# Compare versions.
+#
+- name: "Get currently running version."
+  shell: docker container ls --filter name=dtr-registry --format {% raw %} '{{with .Image -}}{{index (split . ":") 1 }}{{- end}}' {% endraw %}
+  register: extracted_version
+
+- name: "Check if new version is higher (is {{extracted_version.stdout}} < {{docker_dtr_version}})"
+  set_fact:
+    need_update: "{{ extracted_version.stdout | version_compare(docker_dtr_version, '<')}}"
+
+- name: "Update needed"
+  when: need_update
+  block:
+  - name: "Pull desired version of DTR ({{ docker_dtr_version }})."
+    shell: >
+      docker image pull
+      "{{ docker_dtr_image_repository }}/dtr:{{ docker_dtr_version }}"
+    register: pulled
+    retries: 10
+    until: pulled is succeeded
+
+  - name: "Get replica id"
+    shell: "echo {{ _running.stdout_lines[0] }} | cut -d'-' -f3"
+    register: replica_id
+
+  - name: "Upgrade DTR."
+    shell: >
+      docker run
+      --rm
+      --name dtr
+      --volume /var/run/docker.sock:/var/run/docker.sock
+      upgrade
+      --existing-replica-id "{{ replica_id.stdout }}"
+      --ucp-url "{{ docker_ucp_lb }}"
+      --ucp-insecure-tls
+      --ucp-username "{{ docker_ucp_username }}"
+      --ucp-password "{{ docker_ucp_admin_password }}"

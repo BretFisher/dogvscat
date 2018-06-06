@@ -1,0 +1,79 @@
+---
+
+#
+# Infrastructure stack
+#
+# infra_stack=vmware
+
+#
+# Docker EE.
+#
+# docker_ee_version: 17.06
+
+# docker_ee_subscriptions_ubuntu: <placeholder> # Format: sub-xxx-xxx-xxx-xxx
+# docker_ee_package_version: 3:17.06.2~ee~7~3-0~ubuntu
+#
+# docker_ee_subscriptions_centos: <placeholder> # Format: sub-xxx-xxx-xxx-xxx
+# docker_ee_package_version: 17.06.2.ee.7-3.el7.centos
+#
+# docker_ee_subscriptions_redhat: <placeholder> # Format: sub-xxx-xxx-xxx-xxx
+# docker_ee_package_version: 17.06.2.ee.7-3.el7.rhel
+#
+# docker_ee_subscriptions_oracle: <placeholder> # Format: sub-xxx-xxx-xxx-xxx
+# docker_ee_package_version: 17.06.2.ee.8-3.el7
+#
+# docker_ee_subscriptions_sles:   <placeholder> # Format: sub-xxx-xxx-xxx-xxx
+# docker_ee_package_version: 2:17.06.2.ee.7-3
+
+
+# docker_ee_package_version_win: 17.06.2-ee-7
+
+#
+# UCP.
+#
+
+# docker_ucp_version: 2.2.9
+
+# Subscription and certificate directories.
+# These paths are relative to the root folder (containing inventory/, group_vars/, etc...)
+docker_ucp_certificate_directory: ssl_cert
+# docker_ucp_license_path: "{{ playbook_dir }}/docker_subscription.lic"
+
+# docker_ucp_admin_password: <placeholder>
+
+# DNS name of the UCP load balancer endpoint (e.g. "ucp.example.com").
+# This is also used for the SAN (subject alternative names) in any generated UCP certificate,
+# and as the address which DTR nodes will use to contact UCP.
+# docker_ucp_lb: <placeholder>
+
+#
+# Docker storage volume.
+#
+# If this is set to a block device then the device will be formatted as ext4 (if not already formatted),
+# and mounted at /var/lib/docker.
+# docker_storage_volume="/dev/xvdb"
+# DTR
+#
+
+# docker_dtr_version: 2.4.3
+# docker_dtr_replica_id: <placeholder> # (A 12-character long hexadecimal number: e.g. 1234567890ab)
+
+# DNS name of the DTR load balancer endpoint (e.g. "dtr.example.com").
+# This is also used for the SAN (subject alternative names) in any generated DTR certificate.
+# docker_dtr_lb: <placeholder>
+
+# The address the initial swarm leader will advertise.  The default behavior is to use
+# the publicly routable address of `ansible_default_ipv4`.  Override this to force swarm to
+# listen on a non-default interface
+# docker_swarm_listen_address: <placeholder>
+
+#
+# Cloudstor
+#
+
+# Set to "disabled" to prevent the plugin being installed (even if cloudstor_plugin_options is set).
+cloudstor_plugin_version: 1.0
+
+# If defined and cloudstor_plugin_version is not "disabled", the playbook will
+# install the Cloudstor plugin with these settings on each node:
+# cloudstor_plugin_options: "CLOUD_PLATFORM=AWS EFS_ID_REGULAR=fs-AAA EFS_ID_MAXIO=fs-BBB EFS_SUPPORTED=1 AWS_STACK_ID=S2UCVL19bO2DOhi6"

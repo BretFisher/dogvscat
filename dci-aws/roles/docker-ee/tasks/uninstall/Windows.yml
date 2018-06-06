@@ -1,0 +1,12 @@
+---
+- name: "Uninstall Docker."
+  win_shell: Uninstall-Package Docker -ProviderName DockerProvider -Force
+  args:
+    removes: C:\Program Files\docker\dockerd.exe
+  poll: 5
+  async: 60
+
+- name: "Remove Docker provider."
+  win_psmodule:
+    name: DockerProvider
+    state: absent

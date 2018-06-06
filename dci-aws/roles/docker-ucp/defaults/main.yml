@@ -1,0 +1,15 @@
+---
+# Package.
+docker_ucp_image_repository: docker
+docker_ucp_version: latest
+
+# Subscription path and certificates directory path.
+docker_ucp_certificate_directory: "{{ playbook_dir }}/ssl_certificates"
+docker_ucp_license_path: "{{ playbook_dir }}/docker_subscription.lic"
+
+#
+docker_ucp_admin_username: admin
+docker_ucp_lb: "{{ ansible_host }}"
+
+#
+docker_logs_directory: "{{ playbook_dir }}/.logs"

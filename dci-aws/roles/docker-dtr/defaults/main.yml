@@ -1,0 +1,19 @@
+---
+# Package.
+docker_dtr_image_repository: docker
+docker_dtr_version: latest
+
+# UCP.
+docker_ucp_username: admin
+# Don't use UCP's loadbalancer when installing DTR.
+# See: https://success.docker.com/article/How_to_install_backup_or_upgrade_DTR_when_receiving_a_container_wait_error
+docker_ucp_lb: "{{ hostvars[groups[ucp_nodes][0]]['ansible_host'] }}"
+
+# Parameters.
+docker_dtr_https_port: 443
+docker_dtr_http_port: 80
+docker_dtr_lb: "{{ ansible_host }}"     # Fall back to host address (for testing only)
+infra_stack: "unknown"                  # If "aws", configures for S3 storage.
+
+# Logs.
+docker_logs_directory: "{{ playbook_dir }}/.logs"

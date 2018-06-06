@@ -1,0 +1,3 @@
+logs:
+    - type: docker
+      service: docker

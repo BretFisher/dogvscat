@@ -1,0 +1,71 @@
+---
+#
+# Check installation.
+#
+
+- name: "Ensure /etc/docker dir exists."
+  file:
+    path: /etc/docker
+    state: directory
+
+
+#
+# Set additional daemon options
+#
+
+- name: "Configure additional engine options"
+  copy:
+    content: "{{ docker_ee_daemon_options | to_nice_json }}"
+    dest: /etc/docker/daemon.json
+    mode: 0644
+  when: docker_ee_daemon_options is defined
+  register: daemon_options
+
+- name: "Remove daemon config when empty"
+  file:
+    path: /etc/docker/daemon.json
+    state: absent
+  when: docker_ee_daemon_options is not defined
+  register: daemon_options
+
+#
+# Permissions.
+#
+
+- name: "Get current user name (no sudo)."
+  become: False
+  set_fact:
+    current_user: "{{ ansible_user }}"
+
+- name: "Adding existing user {{ current_user }} to group docker."
+  user:
+    name: "{{ current_user }}"
+    groups: docker
+    append: yes
+  when:
+    - current_user != "root"
+
+#
+# Check if docker works correctly.
+#
+
+- name: "Test Docker."
+  shell: "docker version"
+  register: run_docker
+  failed_when: False
+
+- name: "Reload service docker (if not already running)"
+  systemd:
+    name: docker
+    state: restarted
+  when: run_docker.rc != 0 or daemon_options.changed
+
+- name: "Enable service docker."
+  service:
+    name: docker
+    enabled: yes
+    state: running
+
+- name: "Test Docker."
+  shell: "docker version"
+  when: run_docker.rc != 0

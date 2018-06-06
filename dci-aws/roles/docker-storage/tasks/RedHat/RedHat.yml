@@ -1,0 +1,5 @@
+---
+
+- set_fact:
+    docker_storage_fstype: xfs
+    docker_storage_driver: overlay2

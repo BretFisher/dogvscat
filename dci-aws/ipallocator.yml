@@ -1,0 +1,42 @@
+---
+- name: "Configure multiple IP addresses on a Azure VM's NICs"
+  hosts: ucp-primary
+  become: True
+  tasks:
+  - name: "Check if UCP is running."
+    shell: "docker service ls -q --filter name=az-nic-ips"
+    register: _aznicips_already_running
+  - name: "Set aznicips_already_running fact."
+    set_fact:
+      aznicips_already_running: "{{ _aznicips_already_running.stdout_lines | length > 0 }}"
+  - name: "Check if Secret is set."
+    shell: "docker secret ls -q --filter name=azure_ucp_admin.toml"
+    register: _aznicips_already_set
+  - name: "Set _aznicips_already_set fact."
+    set_fact:
+      aznicips_already_set: "{{ _aznicips_already_set.stdout_lines | length > 0 }}"
+  - name: "Setup and Create az-nic-ips secret"
+    when: "not aznicips_already_set"
+    block:
+    - name: "Create Docker secret with Azure Service Principal"
+      shell: docker secret create azure_ucp_admin.toml -
+      args:
+        stdin: |
+          AZURE_CLIENT_ID = "{{ azure_app_id }}"
+          AZURE_CLIENT_SECRET = "{{ azure_app_secret }}"
+          AZURE_TENANT_ID = "{{ azure_tenant_id }}"
+          AZURE_SUBSCRIPTION_ID = "{{ azure_subscription_id }}"
+  - name: "Setup and Create az-nic-ips service"
+    when: "not aznicips_already_running"
+    block:
+    - name: "Deploy global service to execute on all nodes"
+      shell: >
+        docker service create
+        --mode=global
+        --name az-nic-ips
+        --secret=azure_ucp_admin.toml
+        --log-driver json-file
+        --log-opt max-size=1m
+        --env IPCOUNT=128
+        --name ipallocator
+        docker4x/az-nic-ips:latest

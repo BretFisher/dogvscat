@@ -1,0 +1,52 @@
+#
+# Debian/Ubuntu.
+#
+
+- name: Check if apt-get is installed.
+  raw: apt-get --version
+  failed_when: False
+  register: has_apt
+
+- name: Install python2 [apt-get].
+  raw: apt-get update -q && apt-get install -qy python-minimal
+  register: installed_via_apt
+  when: has_apt.rc == 0
+
+#
+# RHEL/CentOS/Oracle.
+#
+
+- name: Check if yum is installed.
+  raw: yum --version
+  register: has_yum
+  failed_when: False
+
+- name: Clean yum
+  raw: yum clean all
+  when: has_yum.rc == 0 and installed_via_apt.get('skipped')
+
+- name: Install python2 [yum].
+  raw: yum install -y python
+  register: installed_via_yum
+  when: has_yum.rc == 0 and installed_via_apt.get('skipped')
+
+#
+# SLES.
+#
+
+- name: Check if zypper is installed.
+  raw: zypper --version
+  failed_when: False
+  register: has_zypper
+
+- name: Install python2 [zypper].
+  raw: zypper install -f -y -n python
+  register: installed_via_zypper
+  when: has_zypper.rc == 0 and installed_via_apt.get('skipped') and installed_via_yum.get('skipped')
+
+#
+# Verify
+#
+
+- name: Ensure python2 has been installed properly.
+  raw: test -e /usr/bin/python

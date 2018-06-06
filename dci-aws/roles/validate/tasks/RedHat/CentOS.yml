@@ -1,0 +1,5 @@
+---
+- assert:
+    that:
+      - docker_ee_subscriptions_centos is defined
+    msg: "You need 'docker_ee_subscriptions_centos' defined in order to install Docker EE on CentOS hosts."

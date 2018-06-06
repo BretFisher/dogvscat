@@ -1,0 +1,3 @@
+---
+docker_ee_repository_url: "https://storebits.docker.com/ee/{{ ansible_distribution | lower }}/{{ docker_ee_subscription }}/centos"
+docker_ee_extras_name: "{{ docker_ee_repository_url }}/centos/docker-ee.repo"

@@ -1,0 +1,7 @@
+#
+# First boot may not be complete.
+# Give it 5 minutes to come up.
+#
+- name: Wait for host to be available
+  wait_for_connection:
+    timeout: 600

@@ -1,0 +1,16 @@
+---
+#
+# Remove installed versions of Docker.
+#
+- name: "Remove installed versions of Docker."
+  package:
+    name: '{{ package }}'
+    state: absent
+  with_items:
+    - docker
+    - docker-ce
+    - docker-common
+    - docker-engine
+    - docker-ee
+  loop_control:
+    loop_var: package

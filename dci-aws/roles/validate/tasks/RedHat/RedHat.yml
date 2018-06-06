@@ -1,0 +1,5 @@
+---
+- assert:
+    that:
+      - docker_ee_subscriptions_redhat is defined
+    msg: "You need 'docker_ee_subscriptions_redhat' defined in order to install Docker EE on RHEL hosts."

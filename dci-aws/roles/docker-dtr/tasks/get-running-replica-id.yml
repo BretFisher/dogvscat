@@ -1,0 +1,8 @@
+---
+- name: "Get running dtr-registry-<replica-id>."
+  shell: bash -c "{% raw %} docker ps --filter name=dtr-registry- -q | xargs docker inspect --format '{{ json .Config.Env }}' | grep -o -e 'DTR_REPLICA_ID=.\{12\}' | cut -d= -f2 {% endraw %}"
+  register: _replica_id
+
+- name: "Store replica id"
+  set_fact:
+    current_replica_id: "{{ _replica_id.stdout_lines[0] | default('not a replica') }}"

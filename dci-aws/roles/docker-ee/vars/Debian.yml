@@ -1,0 +1,4 @@
+---
+# The last {{ ansible_distribution | lower }} will work for all debian-based
+# distribution (as long as {{ ansible_distribution }} is correctly set).
+docker_ee_repository_url: "https://storebits.docker.com/ee/{{ ansible_distribution | lower }}/{{ docker_ee_subscription }}/{{ ansible_distribution | lower }}"

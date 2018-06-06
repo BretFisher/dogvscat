@@ -1,0 +1,15 @@
+# it is suggested that these be encrypted with ansible-vault:
+# ansible-vault edit group_vars/windows.yml
+
+windows_enabled: yes
+ansible_connection: winrm
+ansible_winrm_server_cert_validation: ignore
+ansible_become: no
+ansible_winrm_operation_timeout_sec: 250
+ansible_winrm_read_timeout_sec: 360
+ansible_winrm_message_encryption: never
+
+#ansible_port: 5986
+#ansible_winrm_transport: ntlm
+#ansible_user: Administrator
+#ansible_password:

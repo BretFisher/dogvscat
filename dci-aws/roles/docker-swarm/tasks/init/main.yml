@@ -1,0 +1,42 @@
+---
+#
+# Check Docker Swarm current state.
+#
+- name: Check if already active
+  command: "docker info --format {% raw %} '{{ .Swarm.LocalNodeState }}' {% endraw %}"
+  register: activity_status
+
+#
+# Get eth0 advertise IP for Docker Swarm.
+#
+- name: Get advertise IP for swarm.
+  shell: "ip route get 1.1.1.1 | awk 'NR==1 {print $NF}'"
+  args:
+    executable: /bin/bash
+  register: eth0_ip
+
+- name: Show the IP we found
+  debug:
+    var: eth0_ip
+
+- name: Advertise the eth0 to be used
+  debug:
+    msg: "Advertised IP is: {{ eth0_ip.stdout }}"
+
+#
+# Initialize Docker Swarm.
+#
+- name: Initialize swarm.
+  command: docker swarm init --advertise-addr {{ docker_swarm_listen_address | default(eth0_ip.stdout) }}
+  when: activity_status.stdout == "inactive"
+
+#
+# Export tokens.
+#
+- name: Export manager token.
+  command: docker swarm join-token manager -q
+  register: swarm-manager-token
+
+- name: Export worker token.
+  command: docker swarm join-token worker -q
+  register: swarm-worker-token

@@ -1,0 +1,54 @@
+---
+#
+# Get logs.
+#
+- name: "Get."
+  include_tasks: "{{ os_family }}.yml"
+  when: ansible_os_family == os_family
+  with_items:
+    - "Debian"
+    - "RedHat"
+    - "Suse"
+    - "Windows"
+  loop_control:
+    loop_var: os_family
+
+- name: "Get logs."
+  when: _logs is succeeded
+  block:
+  #
+  # Format.
+  #
+  - set_fact:
+      out: "{{ out|default({}) | combine( {item.container: item.stdout_lines | join('\n') | string } ) }}"
+      err: "{{ err|default({}) | combine( {item.container: item.stderr_lines | join('\n') | string } ) }}"
+    when: item.rc == 0
+    with_items: "{{ _logs.results }}"
+
+  #
+  # Create folders.
+  #
+  - name: "Create folders."
+    local_action:
+      module: file
+      path: "{{ docker_logs_directory }}/{{ ansible_nodename }}/ucp"
+      state: directory
+
+  #
+  # Write to disk.
+  #
+  - name: "Save logs (stdout) to file."
+    when: "item.value | length > 0"
+    local_action:
+      module: copy
+      content: "{{ item.value }}"
+      dest: "{{ docker_logs_directory }}/{{ ansible_nodename }}/ucp/{{ item.key }}.out.log"
+    with_dict: "{{ out | default({}) }}"
+
+  - name: "Save logs (stderr) to file."
+    when: "item.value | length > 0"
+    local_action:
+      module: copy
+      content: "{{ item.value }}"
+      dest: "{{ docker_logs_directory }}/{{ ansible_nodename }}/ucp/{{ item.key }}.err.log"
+    with_dict: "{{ err | default({}) }}"

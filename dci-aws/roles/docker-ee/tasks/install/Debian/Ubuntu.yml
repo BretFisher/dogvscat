@@ -1,0 +1,8 @@
+---
+- include_tasks: "Ubuntu/{{ distribution_version }}.yml"
+  when: ansible_distribution_version == distribution_version
+  with_items:
+    - "14.04"
+    - "16.04"
+  loop_control:
+    loop_var: distribution_version

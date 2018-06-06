@@ -1,0 +1,52 @@
+---
+- name: "Check if UCP is running."
+  shell: "docker service ls --filter name=ucp-agent"
+  register: _running
+
+- name: "Set is_already_running fact."
+  set_fact:
+    running: "{{ _running.stdout_lines | length > 0 }}"
+
+#
+# Exit if UCP is not running.
+#
+- name: "Check if UCP is running."
+  meta: end_play
+  when: not running
+
+#
+# Compare versions.
+#
+- name: "Get currently running version."
+  shell: docker container ls --filter name=ucp-controller --format {% raw %} '{{with .Image -}}{{index (split . ":") 1 }}{{- end}}' {% endraw %}
+  register: extracted_version
+
+- name: "Check if new version is higher (is {{extracted_version.stdout}} < {{docker_ucp_version}})"
+  set_fact:
+    need_update: "{{ extracted_version.stdout | version_compare(docker_ucp_version, '<')}}"
+
+- name: "Update needed"
+  when: need_update
+  block:
+  - name: "Pull desired version of UCP ({{ docker_ucp_version }})."
+    shell: >
+      docker image pull
+      name: "{{ docker_ucp_image_repository }}/ucp:{{ docker_ucp_version }}"
+    register: pulled
+    retries: 10
+    until: pulled is succeeded
+
+  - name: "Get InstanceID if UCP is running."
+    shell: "docker container inspect ucp-controller --format {% raw %} '{{ index .Config.Labels \"com.docker.ucp.InstanceID\" }}' {% endraw %}"
+    register: id
+
+  - name: "Upgrade UCP."
+    shell: >
+      docker run
+      --rm
+      --name ucp
+      --volume /var/run/docker.sock:/var/run/docker.sock
+      --env "UCP_ADMIN_USERNAME={{ docker_ucp_admin_username }}"
+      --env "UCP_ADMIN_PASSWORD={{ docker_ucp_admin_password }}"
+      upgrade
+      --id "{{ id.stdout }}"

@@ -1,0 +1,118 @@
+---
+- name: "Enable Windows Container feature."
+  win_feature:
+    name: "Containers"
+    state: present
+  register: win_container_feat
+
+- name: "Restart"
+  win_reboot:
+    force: yes
+  when: win_container_feat.reboot_required
+
+- name: "Wait for system to become reachable over WinRM"
+  wait_for_connection:
+    timeout: 1200
+
+- name: "Install NuGet 2.8.5.201."
+  win_shell: Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+
+#
+# Windows firewall
+#
+- name: "Check for Windows Firewall"
+  win_shell: Invoke-Command {% raw %} {Get-NetFirewallProfile -Profile Domain | Select-Object -ExpandProperty Enabled} {% endraw %}
+  register: windows_firewall
+
+- name: "Seting fact for Windows Firewall"
+  set_fact:
+    windows_firewall_active: "{{ windows_firewall.stdout_lines[0] == 'True'}}"
+
+- name: "Opening windows ports"
+  win_firewall_rule:
+    name: "{{ item.name }}"
+    localport: "{{ item.port }}"
+    protocol: "{{ item.protocol }}"
+    direction: in
+    action: allow
+  when: windows_firewall_active
+  with_items:
+    - name: "Port for the UCP web UI and API"
+      port: 80
+      protocol: tcp
+    - name: "Port for the UCP web UI and API"
+      port: 443
+      protocol: tcp
+    - name: "Port for the Docker Swarm manager. Used for backwards compatibility"
+      port: 2376
+      protocol: tcp
+    - name: "Port for communication between swarm nodes"
+      port: 2377
+      protocol: tcp
+    - name: "Port for overlay networking (udp)"
+      port: 4789
+      protocol: udp
+    - name: "Port for gossip-based clustering (tcp)"
+      port: 7946
+      protocol: tcp
+    - name: "Port for gossip-based clustering (udp)"
+      port: 7946
+      protocol: udp
+    - name: "Port for a TLS proxy that provides access to UCP, Docker Engine, and Docker Swarm"
+      port: 12376
+      protocol: tcp
+    - name: "Port for internal node configuration, cluster configuration, and HA"
+      port: 12379
+      protocol: tcp
+    - name: "Port for internal node configuration, cluster configuration, and HA"
+      port: 12380
+      protocol: tcp
+    - name: "Port for the certificate authority"
+      port: 12381
+      protocol: tcp
+    - name: "Port for the UCP certificate authority"
+      port: 12382
+      protocol: tcp
+    - name: "Port for the authentication storage backend"
+      port: 12383
+      protocol: tcp
+    - name: "Port for the authentication storage backend for replication across managers"
+      port: 12384
+      protocol: tcp
+    - name: "Port for the authentication service API"
+      port: 12385
+      protocol: tcp
+    - name: "Port for the authentication worker"
+      port: 12386
+      protocol: tcp
+    - name: "Port for the metrics service"
+      port: 12387
+      protocol: tcp
+
+- name: "Install Docker provider."
+  win_psmodule:
+    name: "DockerProvider"
+    state: present
+
+- name: "Install Docker {{ docker_ee_package_version_win }}"
+  win_shell: Install-Package Docker -ProviderName DockerProvider -Force {% if docker_ee_package_version_win is defined %} -RequiredVersion {{ docker_ee_package_version_win }} {% endif %}
+  args:
+    creates: 'C:\Program Files\Docker\'
+
+- name: "Configure additional engine options"
+  win_copy:
+    content: "{{ docker_ee_daemon_options_win | to_nice_json }}"
+    dest: 'C:\Program Files\Docker\config\daemon.json'
+  when: docker_ee_daemon_options_win is defined
+
+- name: "Remove daemon config when empty"
+  win_file:
+    path: 'C:\Program Files\Docker\config\daemon.json'
+    state: absent
+  when: docker_ee_daemon_options_win is not defined
+
+- name: "Start docker service"
+  win_service:
+    name: "docker"
+    state: started
+    start_mode: auto

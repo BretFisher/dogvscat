@@ -1,0 +1,226 @@
+---
+#
+# Pre installation tasks.
+#
+- include_tasks: ".unix.pre.yml"
+
+#
+# OS Specific Updates
+#
+- include_tasks: "Debian/{{ distribution }}.yml"
+  when: ansible_distribution == distribution
+  with_items:
+    - "Ubuntu"
+  loop_control:
+    loop_var: distribution
+
+#
+# Install dependencies.
+#
+- name: "Install dependencies."
+  apt:
+    name: "{{ package }}"
+    state: present
+    install_recommends: no
+  with_items:
+    - apt-utils
+    - apt-transport-https
+    - ca-certificates
+    - software-properties-common
+    - "{% if infra_stack == \"aws\" %}chrony{% else %}ntp{% endif %}"
+  loop_control:
+    loop_var: package
+
+#
+# Chrony configuration on AWS
+#
+- name: "Configure chrony on AWS"
+  when: infra_stack == "aws"
+  lineinfile:
+    line: "server 169.254.169.123 prefer iburst"
+    path: "/etc/chrony/chrony.conf"
+
+- name: "Remove existing pool config on AWS"
+  when: infra_stack == "aws"
+  lineinfile:
+    regexp: "^pool.*"
+    line: ""
+    path: "/etc/chrony/chrony.conf"
+
+- name: "Enable chrony service on AWS"
+  when: infra_stack == "aws"
+  service:
+    name: "chrony"
+    enabled: "yes"
+    state: "restarted"
+
+#
+# UFW firewall
+#
+
+- name: "Check for ufw"
+  become: true
+  shell:
+    ufw status | awk '{ print $2 }'
+  register: ufw_active_result
+
+- name: "Setting facts based on ufw status"
+  set_fact:
+    ufw_active: "{{ ufw_active_result.stdout_lines[0] == 'active' }}"
+    pause_amount: "{{  ufw_active_result.stdout_lines[0] == 'active' | ternary ( '2.0', '0.0' ) }}"
+
+- name: "Opening ports in ufw (if active)"
+  when: ufw_active
+  block:
+    - ufw:
+        port: "{{ item.port }}"
+        proto: "{{ item.protocol }}"
+        rule: allow
+      loop:
+        - name: "port for SSH"
+          port: 22
+          protocol: tcp
+        - name: "port for the UCP web UI and API"
+          port: 80
+          protocol: tcp
+        - name: "port for BGP"
+          port: 179
+          protocol: tcp
+        - name: "port for the UCP web UI and API"
+          port: 443
+          protocol: tcp
+        - name: "port for the Docker Swarm manager. Used for backwards compatibility"
+          port: 2376
+          protocol: tcp
+        - name: "port for communication between swarm nodes"
+          port: 2377
+          protocol: tcp
+        - name: "port for overlay networking (udp)"
+          port: 4789
+          protocol: udp
+        - name: "port for KubeAPIServer"
+          port: 6443
+          protocol: tcp
+        - name: "port for KubeReverseProxy"
+          port: 6444
+          protocol: tcp
+        - name: "port for gossip-based clustering (tcp)"
+          port: 7946
+          protocol: tcp
+        - name: "port for gossip-based clustering (udp)"
+          port: 7946
+          protocol: udp
+        - name: "port for kubelet"
+          port: 10250
+          protocol: tcp
+        - name: "port for a TLS proxy that provides access to UCP, Docker Engine, and Docker Swarm"
+          port: 12376
+          protocol: tcp
+        - name: "port for EtcdReverseProxy"
+          port: 12378
+          protocol: tcp
+        - name: "port for internal node configuration, cluster configuration, and HA"
+          port: 12379
+          protocol: tcp
+        - name: "port for internal node configuration, cluster configuration, and HA"
+          port: 12380
+          protocol: tcp
+        - name: "port for the certificate authority"
+          port: 12381
+          protocol: tcp
+        - name: "port for the UCP certificate authority"
+          port: 12382
+          protocol: tcp
+        - name: "port for the authentication storage backend"
+          port: 12383
+          protocol: tcp
+        - name: "port for the authentication storage backend for replication across managers"
+          port: 12384
+          protocol: tcp
+        - name: "port for the authentication service API"
+          port: 12385
+          protocol: tcp
+        - name: "port for the authentication worker"
+          port: 12386
+          protocol: tcp
+        - name: "port for the metrics service"
+          port: 12387
+          protocol: tcp
+      loop_control:
+        pause: "{{ pause_amount | float }}"
+
+- name: "Opening ports for NFS"
+  when: ufw_active
+  block:
+    - ufw:
+        port: "{{ item.port }}"
+        proto: "{{ item.protocol }}"
+        rule: allow
+      loop:
+        - name: "111/tcp in ufw"
+          port: 111
+          protocol: tcp
+        - name: "111/udp in ufw"
+          port: 111
+          protocol: udp
+        - name: "2049/tcp in ufw"
+          port: 2049
+          protocol: tcp
+        - name: "2049/udp in ufw"
+          port: 2049
+          protocol: udp
+      loop_control:
+        pause: "{{ pause_amount | float }}"
+
+- name: Reload ufw
+  ufw:
+    state: reloaded
+  when: ufw_active
+
+#
+# Add repository to apt.
+#
+- name: "Add GPG key."
+  apt_key:
+    state: present
+    url: "{{ docker_ee_repository_url }}/gpg"
+    validate_certs: no
+  register: add_repository_key
+  ignore_errors: true
+
+- name: "Ensure curl is present (on older systems without SNI)."
+  apt:
+    name: curl
+    state: latest
+  when: add_repository_key is failed
+
+- name: "Add Docker apt key (alternative for older systems without SNI)."
+  become: true
+  shell: "curl -sSL {{ docker_ee_repository_url }}/gpg | apt-key add -"
+  args:
+    warn: no
+  when: add_repository_key is failed
+
+- name: "Add docker EE repository ({{ docker_ee_repository }})."
+  apt_repository:
+    repo: deb [arch=amd64] "{{ docker_ee_repository_url }}" "{{ ansible_distribution_release | lower}}" "{{ docker_ee_repository }}"
+    state: present
+
+#
+# Install Docker EE.
+#
+- name: "Install Docker EE."
+  apt:
+    name: "docker-ee{% if docker_ee_package_version != \"latest\" %}={{docker_ee_package_version}}{% endif %}"
+    state: present
+    install_recommends: yes
+    update_cache: yes
+  retries: 20
+  delay: 10
+  register: install_docker_ee
+  until: install_docker_ee is succeeded
+
+#
+# Post installation tasks.
+#
+- include_tasks: ".unix.post.yml"

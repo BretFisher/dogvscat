@@ -1,0 +1,42 @@
+---
+#
+# Install.
+#
+- name: "Install."
+  include_tasks: "install/main.yml"
+  when: docker_ucp_role_mode == "install"
+
+#
+# Validate managers.
+#
+- name: "Validate managers."
+  include_tasks: "validate-managers/main.yml"
+  when: docker_ucp_role_mode == "validate-managers"
+
+#
+# Validate workers.
+#
+- name: "Validate workers."
+  include_tasks: "validate-workers/main.yml"
+  when: docker_ucp_role_mode == "validate-workers"
+
+#
+# Uninstall.
+#
+- name: "Uninstall UCP."
+  include_tasks: "uninstall/main.yml"
+  when: docker_ucp_role_mode == "uninstall"
+
+#
+# Update.
+#
+- name: "Update UCP."
+  include_tasks: "update/main.yml"
+  when: docker_ucp_role_mode == "update"
+
+#
+# Pull logs.
+#
+- name: "Logs."
+  include_tasks: "logs/main.yml"
+  when: docker_ucp_role_mode == "logs"

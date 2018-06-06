@@ -1,0 +1,14 @@
+---
+#
+# Include system specific tasks.
+#
+
+- include_tasks: "{{ os_family }}.yml"
+  when: ansible_os_family == os_family
+  with_items:
+    - "Debian"
+    - "RedHat"
+    - "Suse"
+    - "Windows"
+  loop_control:
+    loop_var: os_family

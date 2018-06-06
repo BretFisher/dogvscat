@@ -1,0 +1,172 @@
+---
+#
+# Pre installation tasks.
+#
+- include_tasks: ".unix.pre.yml"
+
+- name: "Install dependencies."
+  zypper:
+    name: "{{ package }}"
+    state: present
+  with_items:
+    - "{% if infra_stack == \"aws\" %}chrony{% else %}ntp{% endif %}"
+  loop_control:
+    loop_var: package
+  retries: 30
+  delay: 10
+  register: install_dependencies
+  until: install_dependencies.rc == 0
+
+#
+# Chrony configuration on AWS
+#
+- name: "Configure chrony on AWS"
+  when: infra_stack == "aws"
+  lineinfile:
+    line: "server 169.254.169.123 prefer iburst"
+    path: "/etc/chrony.conf"
+
+- name: "Remove existing pool config on AWS"
+  when: infra_stack == "aws"
+  lineinfile:
+    regexp: "^pool.*"
+    line: ""
+    path: "/etc/chrony.conf"
+
+- name: "Enable chrony service on AWS"
+  when: infra_stack == "aws"
+  service:
+    name: "chronyd"
+    enabled: "yes"
+    state: "restarted"
+
+
+#
+# Add repository to zypper
+#
+- name: "Add Docker GPG key (from {{ docker_ee_repository_url }}/gpg }}."
+  rpm_key:
+    key: "{{ docker_ee_repository_url }}/gpg"
+    state: present
+  register: add_repository_key
+  ignore_errors: true
+
+- name: "Ensure curl is present (on older systems without SNI)."
+  zypper:
+    name: curl
+    state: latest
+  when: add_repository_key is failed
+
+- name: "Download GPG key (alternative for older systems without SNI)."
+  shell: "curl -sSL {{ docker_ee_repository_url }}/gpg -o /tmp/storebits.gpg"
+  args:
+    warn: no
+  when: add_repository_key is failed
+
+- name: "Add Docker apt key (alternative for older systems without SNI)."
+  shell: "rpm --import /tmp/storebits.gpg"
+  args:
+    warn: no
+  when: add_repository_key is failed
+
+#
+# FIXME: use the ansible_distribution_version instead of hardcoding 12.3
+#
+
+- name: "Add Docker EE repository {{ docker_ee_release_channel }}-{{ docker_ee_version }}."
+  zypper_repository:
+    name: "docker-ee.repo"
+    description: "Add Docker EE repository"
+    repo: "{{ docker_ee_repository_url }}/12.3/x86_64/{{ docker_ee_repository }}"
+    runrefresh: "yes"
+    state: present
+
+- name: "Install Docker EE (version: {{ docker_ee_version }})."
+  zypper:
+    name: "{{ docker_ee_package }}"
+    state: present
+    disable_gpg_check: true
+  retries: 30
+  delay: 10
+  register: install_docker_ee
+  until: install_docker_ee.rc == 0
+
+- name: Open ports in the firewall for Docker EE
+  shell:
+    /sbin/SuSEfirewall2 open EXT {{ item.protocol | upper }} {{ item.port }}
+  with_items:
+    - name: "Port for SSH"
+      port: 22
+      protocol: tcp
+    - name: "Port for the UCP web UI and API"
+      port: 80
+      protocol: tcp
+    - name: "BGPPort"
+      port: 179
+      protocol: tcp
+    - name: "Port for the UCP web UI and API"
+      port: 443
+      protocol: tcp
+    - name: "Port for the Docker Swarm manager. Used for backwards compatibility"
+      port: 2376
+      protocol: tcp
+    - name: "Port for communication between swarm nodes"
+      port: 2377
+      protocol: tcp
+    - name: "Port for overlay networking (udp)"
+      port: 4789
+      protocol: udp
+    - name: "KubeAPIServerPort"
+      port: 6443
+      protocol: tcp
+    - name: "KubeReverseProxyPort"
+      port: 6444
+      protocol: tcp
+    - name: "Port for gossip-based clustering (tcp)"
+      port: 7946
+      protocol: tcp
+    - name: "Port for gossip-based clustering (udp)"
+      port: 7946
+      protocol: udp
+    - name: "Port for kubelet"
+      port: 10250
+      protocol: tcp
+    - name: "Port for a TLS proxy that provides access to UCP, Docker Engine, and Docker Swarm"
+      port: 12376
+      protocol: tcp
+    - name: "EtcdReverseProxyPort"
+      port: 12378
+      protocol: tcp
+    - name: "Port for internal node configuration, cluster configuration, and HA"
+      port: 12379
+      protocol: tcp
+    - name: "Port for internal node configuration, cluster configuration, and HA"
+      port: 12380
+      protocol: tcp
+    - name: "Port for the certificate authority"
+      port: 12381
+      protocol: tcp
+    - name: "Port for the UCP certificate authority"
+      port: 12382
+      protocol: tcp
+    - name: "Port for the authentication storage backend"
+      port: 12383
+      protocol: tcp
+    - name: "Port for the authentication storage backend for replication across managers"
+      port: 12384
+      protocol: tcp
+    - name: "Port for the authentication service API"
+      port: 12385
+      protocol: tcp
+    - name: "Port for the authentication worker"
+      port: 12386
+      protocol: tcp
+    - name: "Port for the metrics service"
+      port: 12387
+      protocol: tcp
+
+#
+# Post installation tasks.
+#
+
+- include_tasks: ".unix.post.yml"

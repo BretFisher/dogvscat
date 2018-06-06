@@ -1,0 +1,8 @@
+---
+#
+# Validate that the ucp-proxy container is running
+#
+#- name: Check for ucp-proxy container.
+#  win_shell: docker inspect ucp-proxy
+## Note[Stephen Lane-Walsh]: This _should_ use the docker_container module, but as of now it will not
+# work the way we want with it, so shell commands it is.

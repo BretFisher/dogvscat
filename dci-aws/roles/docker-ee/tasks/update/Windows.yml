@@ -1,0 +1,14 @@
+---
+- name: "Stop docker service."
+  win_service:
+    name: docker
+    state: stopped
+
+- name: "Install Docker ({{ docker_ee_package_version_win }})."
+  win_shell: Install-Package -Name docker -ProviderName DockerProvider -Update -Force {% if docker_ee_package_version_win is defined %} -RequiredVersion {{ docker_ee_package_version_win }} {% endif %}
+
+- name: "Restart docker service."
+  win_service:
+    name: docker
+    state: started
+    start_mode: auto

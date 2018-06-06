@@ -1,0 +1,11 @@
+---
+- name: "Get logs."
+  win_shell: "docker logs {{ container }}"
+  register: _logs
+  with_items:
+    - "ucp-controller"
+    - "ucp-reconcile"
+    - "ucp-swarm-manager"
+  ignore_errors: True
+  loop_control:
+    loop_var: container

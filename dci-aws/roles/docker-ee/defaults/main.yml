@@ -1,0 +1,12 @@
+---
+docker_ee_version: "latest"
+docker_ee_package_versions: "{{ {} }}"
+docker_ee_package_version: "{{ docker_ee_package_versions[ansible_distribution] | default(docker_ee_package_versions[ansible_os_family]) | default(docker_ee_version) }}"
+docker_ee_release_channel: "stable"
+docker_ee_subscription: "{{ docker_ee_subscriptions[ansible_distribution] | default(docker_ee_subscriptions[ansible_os_family] | default(omit)) }}"
+docker_ucp_image_repository: docker
+infra_stack: unknown
+docker_ee_role_mode: "install"
+
+# Logs.
+docker_logs_directory: "{{ playbook_dir }}/.logs"

@@ -1,0 +1,85 @@
+# Docker EE Cluster Topology
+####################################
+linux_ucp_manager_count    = 3
+linux_ucp_worker_count     = 3
+linux_dtr_count            = 3
+windows_ucp_worker_count   = 0
+
+deployment                 = "docker-ee"                 # VM/Hostname prefix string. Prepended to all resources.
+
+# Docker EE Configuration
+####################################
+ansible_inventory          = "inventory/1.hosts"
+ucp_license_path           = "./docker_subscription.lic"
+ucp_admin_password         = ""                          # If unset, check $ansible_inventory for generated value
+
+# AWS Credentials
+###################################
+# Nota Bene: you need to have ~/.aws/credentials in place
+region                     = "<region>"                  # The region to deploy (e.g. us-east-2)
+key_name                   = "<my-aws-key-here>"         # (a short string identifying your AWS SSH key, e.g. "alice")
+
+# Make sure this key has no password to enable automatic retrieval of Windows instance passwords.
+private_key_path           = ".../key.pem"               # The path to the private key corresponding to key_name
+
+
+# AWS AMIs for Docker EE
+###################################
+# Linux instances will use the newest AMI matching this pattern
+linux_ami_name             = "RHEL-7.2_HVM-20161025-x86_64-1-Hourly2-GP2"
+linux_ami_owner            = "309956199498"
+
+# Windows instances will use the newest AMI matching this pattern
+windows_ami_name           = "Windows_Server-2016-English-Full-Containers-2017.11.29"
+windows_ami_owner          = "801119661308" # OwnerID from 'aws ec2 describe-images'
+
+# VM Credentials and Domains
+####################################
+linux_user                 = "ec2-user"
+#windows_user               = "Administrator"
+#windows_admin_password     = ""
+
+# Docker EE VM Settings
+####################################
+#See instances.auto.tfvars to change Instance Types
+#linux_manager_volume_size  = 100
+#linux_worker_volume_size   = 20
+#windows_worker_volume_size = 100
+#dtr_instance_volume_size   = 100
+
+# Docker EE Uninstallation
+####################################
+#linux_ucp_uninstall_command   = ""
+#windows_ucp_uninstall_command = ""
+#linux_dtr_uninstall_command   = ""
+
+# Load balancer DNS names
+####################################
+#docker_ucp_lb                 = "ucp.example.com"
+#docker_dtr_lb                 = "dtr.example.com"
+
+# AWS Configuration Options
+###################################
+# VPC configuration
+# By default, a new VPC will be created with all appropriate routes and subnets.
+# However, if you wish to use a pre-existing VPC then:
+# 1. Set the existing VPC ID here
+# 2. Allocate a block of IP addresses within, as vpc_cidr.
+# Terraform will create one subnet within this block for each availablility zone.
+# This will take up a further 4 bits in the address, so vpc_cidr can't be larger than a /22.
+# After running terraform, you'll need to associate the new subsets with some routing
+# table and ensure that they have Internet access.
+#vpc_id                       = "vpc-0417d63da5aeb8ed6"
+#vpc_cidr                     = "10.0.16.0/20"
+
+efs_supported                 = 1 # 1 if the region supports EFS (0 if not)
+
+# OPTIONAL: Database VM
+####################################
+#linux_database_count = 0
+#windows_database_count = 0
+
+# OPTIONAL: Build VM
+####################################
+#linux_build_server_count = 0
+#windows_build_server_count = 0

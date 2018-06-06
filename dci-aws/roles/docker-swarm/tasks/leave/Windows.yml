@@ -1,0 +1,39 @@
+---
+- name: "Check if the node is member of a swarm."
+  win_shell: "docker info | Select-String -Pattern \"Swarm: active\""
+  register: active
+  ignore_errors: true
+
+- name: "Leave swarm."
+  when: active is succeeded and active.stdout != ""
+  block:
+  - name: "Demote node if it is a manager"
+    win_shell: "docker node demote {{ ansible_nodename }}"
+    failed_when: False
+
+  # Leave swarm asynchronously.
+  #
+  # Because docker swarm leave does something funky with network interfaces,
+  # WinRM gets disconnected.
+  - name: "Leave swarm."
+    win_command: "docker swarm leave"
+    poll: 5
+    async: 45
+    register: left
+    failed_when: False
+
+  - name: "Leave swarm (--force)."
+    win_command: "docker swarm leave --force"
+    poll: 5
+    async: 45
+    when: left is failed
+    failed_when: False
+
+- name: "Check if the node is member of a swarm."
+  win_shell: "docker info | Select-String -Pattern \"Swarm: active\""
+  register: active
+  ignore_errors: true
+
+- assert:
+    that:
+    - active is failed or active.stdout == ""

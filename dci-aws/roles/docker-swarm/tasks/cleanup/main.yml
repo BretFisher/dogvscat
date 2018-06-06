@@ -1,0 +1,4 @@
+---
+- name: "Clean up down nodes, if any."
+  command: bash -c "docker node rm $(docker node ls | grep \" Down \"  | cut -d' ' -f1)"
+  failed_when: False

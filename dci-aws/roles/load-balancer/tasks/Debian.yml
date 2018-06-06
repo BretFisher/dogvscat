@@ -1,0 +1,12 @@
+---
+
+- name: "Check for ufw."
+  shell: "systemctl is-active ufw --quiet"
+  register: ufw_active_result
+  failed_when: False
+
+- name: "Update firewall (ufw)."
+  ufw:
+    from_port: "{{ item }}"
+    rule: "allow"
+  with_items: "{{ [ 8181 ] | union(ports) | union(ssl_ports) }}"
