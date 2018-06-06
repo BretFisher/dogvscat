@@ -27,7 +27,7 @@ private_key_path           = ".../key.pem"               # The path to the priva
 ###################################
 # Linux instances will use the newest AMI matching this pattern
 linux_ami_name             = "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-20180306"
-linux_ami_owner            = "679593333241" # OwnerID from 'aws ec2 describe-images'
+linux_ami_owner            = "099720109477" # OwnerID from 'aws ec2 describe-images'
 
 # Windows instances will use the newest AMI matching this pattern
 windows_ami_name           = "Windows_Server-2016-English-Full-Containers-2017.11.29"
