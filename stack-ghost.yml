@@ -22,10 +22,6 @@ services:
         - com.df.distribute=true
         - com.df.serviceDomain=ghost.dogvs.cat
         - com.df.port=2368
-    # logging:
-      # driver: "gelf"
-      # options:
-        # gelf-address: "udp://127.0.0.1:18201"
 
   db:
     image: mysql:5.7
@@ -35,12 +31,10 @@ services:
       - db-password
     networks:
       - ghost
+    deploy:
+      endpoint_mode: dnsrr
     environment:
       MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db-password
-    # logging:
-      # driver: "gelf"
-      # options:
-        # gelf-address: "udp://127.0.0.1:18201"
 
 networks:
   ghost: {}

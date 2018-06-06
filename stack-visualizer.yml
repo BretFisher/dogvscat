@@ -8,20 +8,8 @@ services:
       replicas: 2
       placement:
         constraints: [node.role == manager]
-      labels:
-        - com.df.notify=true
-        - com.df.distribute=true
-        - com.df.serviceDomain=viz.dogvs.cat
-        - com.df.port=8080
-    networks:
-      - proxy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    logging:
-      driver: "gelf"
-      options:
-        gelf-address: "udp://127.0.0.1:18201"
+    ports:
+      - 4040:8080
 
-networks:
-  proxy:
-    external: true

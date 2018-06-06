@@ -212,34 +212,4 @@ services:
         reservations:
           memory: 128M
 
-  # caddy:
-    # image: stefanprodan/caddy
-    # ports:
-      # - "3000:3000"
-      # - "9090:9090"
-      # - "9093:9093"
-      # - "9094:9094"
-    # networks:
-      # - net
-    # environment:
-      # - ADMIN_USER=${ADMIN_USER:-admin}
-      # - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
-    # configs:
-      # - source: caddy_config
-        # target: /etc/caddy/Caddyfile
-    # deploy:
-      # mode: replicated
-      # replicas: 1
-      # placement:
-        # constraints:
-          # - node.role == manager
-      # resources:
-        # limits:
-          # memory: 128M
-        # reservations:
-          # memory: 64M
-    # healthcheck:
-      # test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      # interval: 5s
-      # timeout: 1s
-      # retries: 5
+

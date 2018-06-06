@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # create managers servers
-for server in 1 2 3; do
+for server in {1..3}; do
 docker-machine create \
   --driver=digitalocean \
   --digitalocean-access-token="${DO_TOKEN}" \
@@ -10,11 +10,11 @@ docker-machine create \
   --digitalocean-ssh-key-fingerprint="${SSH_FINGERPRINT}" \
   --digitalocean-tags=dogvscat \
   dvc${server} &
+
+# enable monitoring
+for server in {1..3}; do
+docker-machine scp daemon.json dvc${server}:/etc/docker/ && 
+docker-machine ssh dvc${server} systemctl restart docker &
 done
-
-# create servers
-
-
-
 
 

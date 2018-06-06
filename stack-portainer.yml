@@ -3,7 +3,7 @@ version: "3.4"
 services:
   web:
     image: portainer/portainer
-    command: -H "tcp://tasks.agent:9001"
+    # command: -H "tcp://tasks.agent:9001"
     deploy:
       replicas: 1
       # placement:
@@ -19,11 +19,6 @@ services:
       - portainer
     volumes:
       - web:/data
-      # - /var/run/docker.sock:/var/run/docker.sock # not needed when using agent
-    # logging:
-      # driver: "gelf"
-      # options:
-        # gelf-address: "udp://127.0.0.1:18201"
   agent:
     image: portainer/agent
     networks:

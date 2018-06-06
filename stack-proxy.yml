@@ -7,6 +7,9 @@ services:
     ports:
       - '80:80'
       - '443:443'
+      # high public port for healthchecks from external LB
+      # ping url: /v1/docker-flow-proxy/ping
+      - '9433:8080'
     networks:
       - proxy
     environment:
@@ -17,10 +20,8 @@ services:
             # - cert-docker-dev
     deploy:
       mode: global
-    # logging:
-      # driver: "gelf"
-      # options:
-        # gelf-address: "udp://127.0.0.1:18201"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/v1/docker-flow-proxy/ping"]
 
   swarm-listener:
     image: vfarcic/docker-flow-swarm-listener
@@ -37,11 +38,6 @@ services:
       placement:
         constraints:
           - node.role == manager
-    # logging:
-      # driver: "gelf"
-      # options:
-        # gelf-address: "udp://127.0.0.1:18201"
-#
 
 networks:
   proxy:

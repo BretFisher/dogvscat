@@ -15,10 +15,6 @@ services:
         - com.df.port=80
     networks:
       - proxy
-    logging:
-      driver: "gelf"
-      options:
-        gelf-address: "udp://127.0.0.1:18201"
 
 networks:
   proxy:
