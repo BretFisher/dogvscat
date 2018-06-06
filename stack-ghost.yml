@@ -22,6 +22,9 @@ services:
         - com.df.distribute=true
         - com.df.serviceDomain=ghost.dogvs.cat
         - com.df.port=2368
+        - traefik.port=2368
+        - traefik.docker.network=proxy
+        - traefik.frontend.rule=Host:ghost.dogvs.cat
 
   db:
     image: mysql:5.7

@@ -13,6 +13,10 @@ services:
         - com.df.distribute=true
         - com.df.serviceDomain=www.dogvs.cat,dogvs.cat
         - com.df.port=80
+        - traefik.port=80
+        - traefik.docker.network=proxy
+        - traefik.frontend.rule=Host:www.dogvs.cat,dogvs.cat
+
     networks:
       - proxy
 

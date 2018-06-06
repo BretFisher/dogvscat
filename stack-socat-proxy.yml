@@ -1,0 +1,55 @@
+version: '3.3'
+
+services:
+
+  traefik:
+    image: traefik:1.6-alpine
+    networks:
+      - proxy
+    volumes:
+      - acme:/etc/traefik/acme
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # traefik dashboard
+    deploy:
+      mode: global
+    command:
+      # Use your favourite settings here, but add:
+      - --Docker
+      - --Docker.EndPoint=http://dockersocket:2375
+      - --Docker.ExposedByDefault=false
+      - --Docker.SwarmMode
+      - --Docker.Watch
+      - --api
+
+  dockersocket:
+    image: tecnativa/docker-socket-proxy
+    networks:
+      - proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      CONTAINERS: 1
+      NETWORKS: 1
+      SERVICES: 1
+      SWARM: 1
+      TASKS: 1
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.role == manager
+
+volumes:
+  acme:
+    driver: rexray/dobs
+    driver_opts:
+      size: 1
+
+networks:
+  proxy:
+    external: true
+# secrets:
+    # cert-docker-dev:
+        # file: ./nginx/dev-full.pem

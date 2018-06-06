@@ -2,46 +2,48 @@ version: '3.3'
 
 services:
 
-  proxy:
-    image: vfarcic/docker-flow-proxy
-    ports:
-      - '80:80'
-      - '443:443'
-      # high public port for healthchecks from external LB
-      # ping url: /v1/docker-flow-proxy/ping
-      - '9433:8080'
-    networks:
-      - proxy
-    environment:
-      LISTENER_ADDRESS: "swarm-listener"
-      MODE: "swarm"
-      DEBUG: "true"
-        # secrets:
-            # - cert-docker-dev
-    deploy:
-      mode: global
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/v1/docker-flow-proxy/ping"]
-
-  swarm-listener:
-    image: vfarcic/docker-flow-swarm-listener
+  traefik:
+    image: traefik:1.6-alpine
     networks:
       - proxy
     volumes:
-      - '/var/run/docker.sock:/var/run/docker.sock'
-    environment:
-      - >-
-          DF_NOTIFY_CREATE_SERVICE_URL=http://proxy:8080/v1/docker-flow-proxy/reconfigure
-      - >-
-          DF_NOTIFY_REMOVE_SERVICE_URL=http://proxy:8080/v1/docker-flow-proxy/remove
+      - acme:/etc/traefik/acme
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # traefik dashboard
     deploy:
-      placement:
-        constraints:
-          - node.role == manager
+      mode: global
+    command:
+      # Use your favourite settings here, but add:
+      - --docker
+      - --docker.swarmMode
+      - --docker.domain=traefik
+      - --docker.watch
+      - --api
+      - --defaultentrypoints=http,https
+      - --acme
+      - --acme.email=bret@bretfisher.com
+        # TODO: envvar for email and default domain
+      - --acme.httpchallenge
+      - --acme.httpchallenge.entrypoint=http
+      - --acme.onhostrule=true
+      - --acme.entrypoint=https
+      - --entryPoints=Name:https Address::443 TLS
+      - --entryPoints=Name:http Address::80
+      # - --entryPoints=Name:http Address::80 Redirect.EntryPoint:https
+      - --acme.storage=acme.json
+      - --acme.acmelogging
+      - --acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      # - --acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+
+volumes:
+  acme:
+    driver: rexray/dobs
+    driver_opts:
+      size: 1
 
 networks:
   proxy:
     external: true
-# secrets:
-    # cert-docker-dev:
-        # file: ./nginx/dev-full.pem

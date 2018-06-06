@@ -33,6 +33,9 @@ services:
         - com.df.distribute=true
         - com.df.serviceDomain=vote.dogvs.cat
         - com.df.port=80
+        - traefik.port=80
+        - traefik.docker.network=proxy
+        - traefik.frontend.rule=Host:vote.dogvs.cat
  
   result:
     image: bretfisher/examplevotingapp_result
@@ -45,7 +48,10 @@ services:
         - com.df.distribute=true
         - com.df.serviceDomain=result.dogvs.cat
         - com.df.port=80
- 
+        - traefik.port=80
+        - traefik.docker.network=proxy
+        - traefik.frontend.rule=Host:result.dogvs.cat
+
   worker:
     image: bretfisher/examplevotingapp_worker:java
     networks:

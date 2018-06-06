@@ -90,6 +90,9 @@ services:
         - com.df.distribute=true
         - com.df.serviceDomain=grafana.dogvs.cat
         - com.df.port=3000
+        - traefik.port=3000
+        - traefik.docker.network=proxy
+        - traefik.frontend.rule=Host:grafana.dogvs.cat
       placement:
         constraints:
           - node.role == manager
@@ -122,6 +125,10 @@ services:
         - com.df.serviceDomain=alertmanager.dogvs.cat
         - com.df.port=9093
         - com.df.users=${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}
+        - traefik.port=9093
+        - traefik.docker.network=proxy
+        - traefik.frontend.rule=Host:alertmanager.dogvs.cat
+        - traefik.frontend.auth.basic=${AM_USER:-admin}:${AM_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK}
       placement:
         constraints:
           - node.role == manager
@@ -146,6 +153,10 @@ services:
         - com.df.distribute=true
         - com.df.serviceDomain=unsee.dogvs.cat
         - com.df.port=9094
+        - traefik.port=9094
+        - traefik.docker.network=proxy
+        - traefik.frontend.rule=Host:unsee.dogvs.cat
+        - traefik.frontend.auth.basic=${UNSEE_USER:-admin}:${UNSEE_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK}
         # - com.df.users=${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}
 
   node-exporter:
@@ -203,6 +214,10 @@ services:
         - com.df.serviceDomain=prom.dogvs.cat
         - com.df.port=9090
         - com.df.users=${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}
+        - traefik.port=9090
+        - traefik.docker.network=proxy
+        - traefik.frontend.rule=Host:prom.dogvs.cat
+        - traefik.frontend.auth.basic=${KIBANA_USER:-admin}:${KIBANA_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK} 
       placement:
         constraints:
           - node.role == manager

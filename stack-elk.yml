@@ -51,8 +51,12 @@ services:
         - com.df.distribute=true
         - com.df.serviceDomain=kibana.dogvs.cat
         - com.df.port=5601
-        - com.df.users=${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}
-      # TODO: make these secrets
+        - com.df.users=${KIBANA_USER:-admin}:${KIBANA_PASSWORD:-admin}
+        - traefik.port=5601
+        - traefik.docker.network=proxy
+        - traefik.frontend.rule=Host:kibana.dogvs.cat
+        - traefik.frontend.auth.basic=${KIBANA_USER:-admin}:${KIBANA_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK}
+      # TODO: make secrets secret
 
 
 configs:

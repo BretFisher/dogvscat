@@ -14,6 +14,9 @@ services:
         - com.df.distribute=true
         - com.df.serviceDomain=portainer.dogvs.cat
         - com.df.port=9000
+        - traefik.port=9000
+        - traefik.docker.network=proxy
+        - traefik.frontend.rule=Host:portainer.dogvs.cat
     networks:
       - proxy
       - portainer
