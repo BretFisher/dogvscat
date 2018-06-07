@@ -85,6 +85,7 @@
           --host-address "{{ docker_swarm_listen_address | default(ansible_default_ipv4['address']) }}"
           --san "{{ docker_ucp_lb }}"
           {% if ansible_host != docker_ucp_lb %} --san "{{ ansible_host }}" {% endif %}
+          {% if certificate_stat.stat.exists == true %} --external-server-cert {% endif %}
     # End block (rescue).
     rescue:
       - shell: docker logs ucp-reconcile | tee ucp-reconcile.log

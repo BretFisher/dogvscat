@@ -1,6 +1,8 @@
 # docker ee license
 docker_subscription.lic
 
+#terraform resources
+inventory/1.hosts
 
 # Created by https://www.gitignore.io/api/vim,macos,ansible,windows,terraform
 

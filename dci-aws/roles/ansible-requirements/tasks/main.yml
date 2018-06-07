@@ -8,9 +8,17 @@
   register: has_apt
 
 - name: Install python2 [apt-get].
-  raw: apt-get update -q && apt-get install -qy python-minimal
+  raw: apt-get update -q && apt-get install -qy python-minimal python-pip
   register: installed_via_apt
   when: has_apt.rc == 0
+
+- name: install certain python modules for docker
+  pip:
+    name: "{{ item.name }}"
+    version: "{{ item.version }}"
+    state: present
+  with_items:
+  - { name: docker, version: 3.3.0 }
 
 #
 # RHEL/CentOS/Oracle.
