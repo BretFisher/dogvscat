@@ -11,6 +11,10 @@ services:
       - frontend
     deploy:
       endpoint_mode: dnsrr
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: "udp://127.0.0.1:5000"
 
   db:
     image: postgres:9.6
@@ -20,6 +24,10 @@ services:
       - backend
     deploy:
       endpoint_mode: dnsrr
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: "udp://127.0.0.1:5000"
 
   vote:
     image: bretfisher/examplevotingapp_vote
@@ -27,16 +35,16 @@ services:
       - frontend
       - proxy
     deploy:
-      replicas: 2
+      replicas: 1
       labels:
-        - com.df.notify=true
-        - com.df.distribute=true
-        - com.df.serviceDomain=vote.dogvs.cat
-        - com.df.port=80
         - traefik.port=80
         - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:vote.dogvs.cat
- 
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: "udp://127.0.0.1:5000"
+
   result:
     image: bretfisher/examplevotingapp_result
     networks:
@@ -44,13 +52,13 @@ services:
       - proxy
     deploy:
       labels:
-        - com.df.notify=true
-        - com.df.distribute=true
-        - com.df.serviceDomain=result.dogvs.cat
-        - com.df.port=80
         - traefik.port=80
         - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:result.dogvs.cat
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: "udp://127.0.0.1:5000"
 
   worker:
     image: bretfisher/examplevotingapp_worker:java
@@ -58,8 +66,12 @@ services:
       - frontend
       - backend
     deploy:
-      replicas: 2
-
+      replicas: 1
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: "udp://127.0.0.1:5000"
+        
 networks:
   frontend: {}
   backend: {}

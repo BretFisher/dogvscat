@@ -8,4 +8,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     deploy:
       mode: global
-
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: "tcp://127.0.0.1:5000"

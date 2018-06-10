@@ -86,10 +86,6 @@ services:
       mode: replicated
       replicas: 1
       labels:
-        - com.df.notify=true
-        - com.df.distribute=true
-        - com.df.serviceDomain=grafana.dogvs.cat
-        - com.df.port=3000
         - traefik.port=3000
         - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:grafana.dogvs.cat
@@ -120,11 +116,6 @@ services:
       mode: replicated
       replicas: 1
       labels:
-        - com.df.notify=true
-        - com.df.distribute=true
-        - com.df.serviceDomain=alertmanager.dogvs.cat
-        - com.df.port=9093
-        - com.df.users=${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}
         - traefik.port=9093
         - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:alertmanager.dogvs.cat
@@ -149,10 +140,6 @@ services:
       mode: replicated
       replicas: 1
       labels:
-        - com.df.notify=true
-        - com.df.distribute=true
-        - com.df.serviceDomain=unsee.dogvs.cat
-        - com.df.port=9094
         - traefik.port=9094
         - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:unsee.dogvs.cat
@@ -209,11 +196,6 @@ services:
       mode: replicated
       replicas: 1
       labels:
-        - com.df.notify=true
-        - com.df.distribute=true
-        - com.df.serviceDomain=prom.dogvs.cat
-        - com.df.port=9090
-        - com.df.users=${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}
         - traefik.port=9090
         - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:prom.dogvs.cat

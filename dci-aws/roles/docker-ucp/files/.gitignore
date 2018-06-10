@@ -1,0 +1,4 @@
+*.pem
+*.crt
+*.key
+openssl.cnf

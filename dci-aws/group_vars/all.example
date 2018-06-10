@@ -3,14 +3,14 @@
 #
 # Infrastructure stack
 #
-# infra_stack=aws
+# infra_stack=vmware
 
 #
 # Docker EE.
 #
 # docker_ee_version: 17.06
 
-docker_ee_subscriptions_ubuntu: sub-a4bf3c6c-4024-443a-9a20-2337f6fa79e4
+# docker_ee_subscriptions_ubuntu: <placeholder> # Format: sub-xxx-xxx-xxx-xxx
 # docker_ee_package_version: 3:17.06.2~ee~7~3-0~ubuntu
 #
 # docker_ee_subscriptions_centos: <placeholder> # Format: sub-xxx-xxx-xxx-xxx
@@ -37,14 +37,14 @@ docker_ee_subscriptions_ubuntu: sub-a4bf3c6c-4024-443a-9a20-2337f6fa79e4
 # Subscription and certificate directories.
 # These paths are relative to the root folder (containing inventory/, group_vars/, etc...)
 docker_ucp_certificate_directory: ssl_cert
-docker_ucp_license_path: "{{ playbook_dir }}/license/docker_subscription.lic"
+# docker_ucp_license_path: "{{ playbook_dir }}/docker_subscription.lic"
 
-docker_ucp_admin_password: adminadmin123
+# docker_ucp_admin_password: <placeholder>
 
 # DNS name of the UCP load balancer endpoint (e.g. "ucp.example.com").
 # This is also used for the SAN (subject alternative names) in any generated UCP certificate,
 # and as the address which DTR nodes will use to contact UCP.
-docker_ucp_lb: ucp.dogvscat.biz
+# docker_ucp_lb: <placeholder>
 
 #
 # Docker storage volume.
@@ -60,7 +60,7 @@ docker_ucp_lb: ucp.dogvscat.biz
 
 # DNS name of the DTR load balancer endpoint (e.g. "dtr.example.com").
 # This is also used for the SAN (subject alternative names) in any generated DTR certificate.
-docker_dtr_lb: dtr.dogvscat.biz
+# docker_dtr_lb: <placeholder>
 
 # The address the initial swarm leader will advertise.  The default behavior is to use
 # the publicly routable address of `ansible_default_ipv4`.  Override this to force swarm to
@@ -73,7 +73,6 @@ docker_dtr_lb: dtr.dogvscat.biz
 
 # Set to "disabled" to prevent the plugin being installed (even if cloudstor_plugin_options is set).
 cloudstor_plugin_version: 1.0
-# cloudstor_plugin_version: 18.01.0-ce
 
 # If defined and cloudstor_plugin_version is not "disabled", the playbook will
 # install the Cloudstor plugin with these settings on each node:

@@ -21,6 +21,7 @@ services:
     image: docker.elastic.co/logstash/logstash-oss:6.2.2
     ports:
       - "5000:5000"
+      - "5000:5000/udp"
       - "9600:9600"
     configs:
       - source: logstash_config
@@ -47,11 +48,6 @@ services:
       mode: replicated
       replicas: 1
       labels:
-        - com.df.notify=true
-        - com.df.distribute=true
-        - com.df.serviceDomain=kibana.dogvs.cat
-        - com.df.port=5601
-        - com.df.users=${KIBANA_USER:-admin}:${KIBANA_PASSWORD:-admin}
         - traefik.port=5601
         - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:kibana.dogvs.cat
@@ -66,7 +62,7 @@ configs:
   logstash_config:
     file: ./docker-elk/logstash/config/logstash.yml
   logstash_pipeline:
-    file: ./docker-elk/logstash/pipeline/logstash.conf
+    file: ./logstash.conf
   kibana_config:
     file: ./docker-elk/kibana/config/kibana.yml
 

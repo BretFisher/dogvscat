@@ -10,10 +10,6 @@ services:
         # constraints: [node.role == manager]
         # place on managers when not using agent, place on workers if using agent
       labels:
-        - com.df.notify=true
-        - com.df.distribute=true
-        - com.df.serviceDomain=portainer.dogvs.cat
-        - com.df.port=9000
         - traefik.port=9000
         - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:portainer.dogvs.cat

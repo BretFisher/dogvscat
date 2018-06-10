@@ -16,15 +16,15 @@ services:
       database__connection__database: ghost
       url: http://ghost.dogvs.cat
     deploy:
-      replicas: 2
+      replicas: 1
       labels:
-        - com.df.notify=true
-        - com.df.distribute=true
-        - com.df.serviceDomain=ghost.dogvs.cat
-        - com.df.port=2368
         - traefik.port=2368
         - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:ghost.dogvs.cat
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: "udp://127.0.0.1:5000"
 
   db:
     image: mysql:5.7
@@ -38,7 +38,11 @@ services:
       endpoint_mode: dnsrr
     environment:
       MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db-password
-
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: "udp://127.0.0.1:5000"
+        
 networks:
   ghost: {}
   proxy:

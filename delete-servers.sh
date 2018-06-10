@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # create managers servers
-for server in {4..20}; do
+for server in {1..3}; do
 docker-machine rm -y dvc${server} &
 done
 

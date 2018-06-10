@@ -32,8 +32,7 @@ services:
       - --acme.entrypoint=https
       - --entryPoints=Name:https Address::443 TLS
       - --entryPoints=Name:http Address::80
-      # - --entryPoints=Name:http Address::80 Redirect.EntryPoint:https
-      - --acme.storage=acme.json
+      - --acme.storage=/etc/traefik/acme/acme.json
       - --acme.acmelogging
       - --acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
       # - --acme.caserver=https://acme-v02.api.letsencrypt.org/directory

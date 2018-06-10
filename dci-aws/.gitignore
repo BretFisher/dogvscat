@@ -4,6 +4,14 @@ docker_subscription.lic
 #terraform resources
 inventory/1.hosts
 
+# ansible resources
+group_vars/all
+.logs
+
+# client bundles
+ucp-bundle-admin
+ucp-bundle*
+
 # Created by https://www.gitignore.io/api/vim,macos,ansible,windows,terraform
 
 ### Ansible ###

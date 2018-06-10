@@ -5,7 +5,7 @@ services:
   viz:
     image: dockersamples/visualizer
     deploy:
-      replicas: 2
+      replicas: 1
       placement:
         constraints: [node.role == manager]
     volumes:
