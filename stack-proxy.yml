@@ -13,8 +13,6 @@ services:
       - "80:80"
       - "443:443"
       - "8080:8080" # traefik dashboard
-    deploy:
-      mode: global
     command:
       # Use your favourite settings here, but add:
       - --docker
@@ -36,6 +34,10 @@ services:
       - --acme.acmelogging
       - --acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
       # - --acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+    logging:
+      options:
+        max-size: "500k"
+
 
 volumes:
   acme:

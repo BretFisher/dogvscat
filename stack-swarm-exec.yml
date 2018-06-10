@@ -11,4 +11,8 @@ services:
       mode: global
       restart_policy:
         condition: none
+    logging:
+      options:
+        max-size: "500k"
+
 

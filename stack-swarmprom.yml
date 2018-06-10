@@ -44,6 +44,10 @@ services:
           memory: 128M
         reservations:
           memory: 64M
+    logging:
+      options:
+        max-size: "500k"
+
 
   cadvisor:
     image: google/cadvisor
@@ -63,6 +67,10 @@ services:
           memory: 128M
         reservations:
           memory: 64M
+    logging:
+      options:
+        max-size: "500k"
+
 
   grafana:
     image: stefanprodan/swarmprom-grafana:5.0.1
@@ -97,6 +105,10 @@ services:
           memory: 128M
         reservations:
           memory: 64M
+    logging:
+      options:
+        max-size: "500k"
+
 
   alertmanager:
     image: stefanprodan/swarmprom-alertmanager:v0.14.0
@@ -128,6 +140,10 @@ services:
           memory: 128M
         reservations:
           memory: 64M
+    logging:
+      options:
+        max-size: "500k"
+
 
   unsee:
     image: cloudflare/unsee:v0.8.0
@@ -145,6 +161,10 @@ services:
         - traefik.frontend.rule=Host:unsee.dogvs.cat
         - traefik.frontend.auth.basic=${UNSEE_USER:-admin}:${UNSEE_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK}
         # - com.df.users=${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}
+    logging:
+      options:
+        max-size: "500k"
+
 
   node-exporter:
     image: stefanprodan/swarmprom-node-exporter:v0.15.2
@@ -173,6 +193,10 @@ services:
           memory: 128M
         reservations:
           memory: 64M
+    logging:
+      options:
+        max-size: "500k"
+
 
   prometheus:
     image: stefanprodan/swarmprom-prometheus:v2.2.0-rc.0
@@ -208,5 +232,9 @@ services:
           memory: 2048M
         reservations:
           memory: 128M
+    logging:
+      options:
+        max-size: "500k"
+
 
 

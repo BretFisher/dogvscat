@@ -31,6 +31,10 @@ networks:
       - db
     volumes:
       - .:/srv/Portus
+    logging:
+      options:
+        max-size: "500k"
+
 
   background:
     image: opensuse/portus:development
@@ -52,6 +56,10 @@ networks:
       - .:/srv/Portus
     links:
       - db
+    logging:
+      options:
+        max-size: "500k"
+
 
   webpack:
     image: kkarczmarczyk/node-yarn:6.9-slim
@@ -59,6 +67,10 @@ networks:
     working_dir: /srv/Portus
     volumes:
       - .:/srv/Portus
+    logging:
+      options:
+        max-size: "500k"
+
 
   clair:
     image: quay.io/coreos/clair:v2.0.2
@@ -73,17 +85,29 @@ networks:
       - /tmp:/tmp
       - ./examples/compose/clair/clair.yml:/clair.yml
     command: [-config, /clair.yml]
+    logging:
+      options:
+        max-size: "500k"
+
 
   db:
     image: library/mariadb:10.0.23
     command: mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci --init-connect='SET NAMES UTF8;' --innodb-flush-log-at-trx-commit=0
     environment:
       MYSQL_ROOT_PASSWORD: portus
+    logging:
+      options:
+        max-size: "500k"
+
 
   postgres:
     image: library/postgres:10-alpine
     environment:
       POSTGRES_PASSWORD: portus
+    logging:
+      options:
+        max-size: "500k"
+
 
   registry:
     image: library/registry:2.6
@@ -114,3 +138,7 @@ networks:
       - 5001:5001
     links:
       - portus
+    logging:
+      options:
+        max-size: "500k"
+

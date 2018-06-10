@@ -28,6 +28,10 @@ services:
       mode: global
     environment:
       AGENT_CLUSTER_ADDR: tasks.agent
+    logging:
+      options:
+        max-size: "500k"
+
 
 
 networks:

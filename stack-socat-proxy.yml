@@ -22,6 +22,11 @@ services:
       - --Docker.SwarmMode
       - --Docker.Watch
       - --api
+    logging:
+      options:
+        max-size: "500k"
+
+
 
   dockersocket:
     image: tecnativa/docker-socket-proxy
@@ -40,6 +45,10 @@ services:
       placement:
         constraints:
           - node.role == manager
+    logging:
+      options:
+        max-size: "500k"
+
 
 volumes:
   acme:

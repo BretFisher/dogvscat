@@ -16,6 +16,9 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+    logging:
+      options:
+        max-size: "500k"
 
   logstash:
     image: docker.elastic.co/logstash/logstash-oss:6.2.2
@@ -35,6 +38,10 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+    logging:
+      options:
+        max-size: "500k"
+
 
   kibana:
     image: docker.elastic.co/kibana/kibana-oss:6.2.2
@@ -53,6 +60,10 @@ services:
         - traefik.frontend.rule=Host:kibana.dogvs.cat
         - traefik.frontend.auth.basic=${KIBANA_USER:-admin}:${KIBANA_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK}
       # TODO: make secrets secret
+    logging:
+      options:
+        max-size: "500k"
+
 
 
 configs:
