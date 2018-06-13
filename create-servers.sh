@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+# set -x
 
 # create managers servers in digital ocean with pre-set environment vars
 # https://docs.docker.com/machine/drivers/digital-ocean/

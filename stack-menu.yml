@@ -12,10 +12,10 @@ services:
         - traefik.port=80
         - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:www.dogvs.cat,dogvs.cat
-    logging:
-      driver: "gelf"
-      options:
-        gelf-address: "udp://127.0.0.1:5000"
+    # logging:
+    #   driver: "gelf"
+    #   options:
+    #     gelf-address: "udp://127.0.0.1:5000"
     networks:
       - proxy
 
