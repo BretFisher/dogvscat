@@ -4,9 +4,6 @@ services:
 
   ghost:
     image: ghost:1-alpine
-    networks:
-      - proxy
-      - ghost
     environment:
       # see https://docs.ghost.org/docs/config#section-running-ghost-with-config-env-variables
       database__client: mysql
@@ -14,21 +11,20 @@ services:
       database__connection__user: root
       database__connection__password: OpdP2dy4jzAT
       database__connection__database: ghost
-      url: http://ghost.dogvs.cat
+      url: http://ghost.dogvscat.biz
     deploy:
       replicas: 1
       labels:
-        - traefik.port=2368
-        - traefik.docker.network=proxy
-        - traefik.frontend.rule=Host:ghost.dogvs.cat
+        com.docker.lb.port: 2368
+        com.docker.lb.hosts: ghost.dogvscat.biz
+
+
   db:
     image: mysql:5.7
     volumes:
       - db:/var/lib/mysql
     secrets:
       - ghost-db-password
-    networks:
-      - ghost
     deploy:
       endpoint_mode: dnsrr
     environment:
@@ -41,18 +37,11 @@ services:
       - db-backup:/backup
     secrets:
       - ghost-db-password
-    networks:
-      - ghost
     environment:
       MYSQL_ROOT_PASSWORD_FILE: /run/secrets/ghost-db-password
 
   #TODO: backup for static content
 
-
-networks:
-  ghost: {}
-  proxy:
-    external: true
 
 volumes:
   db:

@@ -1,0 +1,67 @@
+version: '3.2'
+
+services:
+
+  redis:
+    image: redis:alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - frontend
+    deploy:
+      endpoint_mode: dnsrr
+
+  db:
+    image: postgres:9.6
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    deploy:
+      endpoint_mode: dnsrr
+
+  vote:
+    image: bretfisher/examplevotingapp_vote
+    networks:
+      - frontend
+    deploy:
+      replicas: 1
+      labels:
+        com.docker.lb.port: 80
+        com.docker.lb.hosts: vote.dogvscat.biz
+        com.docker.lb.network: frontend
+
+  result:
+    image: bretfisher/examplevotingapp_result
+    networks:
+      - backend
+    deploy:
+      labels:
+        com.docker.lb.port: 80
+        com.docker.lb.hosts: result.dogvscat.biz
+        com.docker.lb.network: backend
+
+  worker:
+    image: bretfisher/examplevotingapp_worker:java
+    networks:
+      - frontend
+      - backend
+    deploy:
+      replicas: 1
+
+        
+networks:
+  frontend: {}
+  backend: {}
+
+volumes:
+  db-data:
+    driver: cloudstor:latest
+    driver_opts:
+      size: 1
+  redis-data:
+    driver: cloudstor:latest
+    driver_opts:
+      size: 1
+

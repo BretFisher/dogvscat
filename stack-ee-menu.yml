@@ -1,0 +1,19 @@
+version: '3.2'
+
+services:
+
+  menu:
+    image: bretfisher/dogvscat-menu:ee
+    build:
+      context: menu
+    networks:
+      - menu
+    deploy:
+      replicas: 3
+      labels:
+        com.docker.lb.port: 80
+        com.docker.lb.hosts: www.dogvscat.biz
+        com.docker.lb.network: menu
+
+networks:
+  menu: {}

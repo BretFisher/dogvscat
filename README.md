@@ -1,4 +1,4 @@
-# dogvscat (Work In Progress)
+# dogvscat (Work In Progress. This How-To Isn't Finished Yet)
 
 This repo gives a few examples of patterns for how you might build Docker Swarm clusters with all the bells and whistles. 
 
@@ -60,4 +60,17 @@ Then just create a single-node Swarm in that engine:
 
 ## Deploying the Swarm EE Example
 
-TODO
+## Other Notes
+
+### Using Docker Machine? Really???
+- Don't throw out the good in search of the perfect
+- DM works fine solo admins with 3-20 cloud servers
+- Be sure to backup certs from .docker/machine/machines
+- If you're a team of 2-3 and still want to try sticking with DM, maybe try:
+  - https://github.com/bhurlow/machine-share
+  - https://github.com/efrecon/machinery
+
+### Swarm Visualizer
+- You can optionally deploy `stack-visualizer.yml` early on to see how your stacks and services fill out your swarm on port 4040.
+
+`docker stack deploy -c stack-visualizer.yml viz`
