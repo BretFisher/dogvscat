@@ -5,7 +5,7 @@ docker_subscription.lic
 inventory/1.hosts
 
 # ansible resources
-group_vars/all
+all
 .logs
 
 # client bundles

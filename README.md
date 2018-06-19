@@ -13,6 +13,14 @@ A Docker Swarm cluster needs more then just your app running, it often needs at 
 
 This demo is meant for you to `git clone` and run locally to help you learn the tools and methods for building a complete Docker Swarm cluster.
 
+# Major To-Do's left
+
+- [ ] Pull out everything that needs envvars
+- [ ] Use Docker Swarm Secrets for privates
+- [ ] Fix Docker EE Ansible permissions on ELB's and Security groups for port 8080 (app ELB)
+- [ ] Better README step-by-step
+- [ ] Walkthough videos
+
 ## Getting Started
 
 This repo holds two deployment examples for Docker Swarm
@@ -31,7 +39,14 @@ You can do all this locally on a single node or optionally using Docker Machine 
 The scripts and compose/stack files use variables to make this demo easier to get started. Set these at your shell before running commands
 
 ```
-TODO: add envs
+# for Digital Ocean docker-machine driver
+SSH_FINGERPRINT #fingerprint used to match your SSH key to Digital Ocean's
+DO_SIZE #instance size for Digital Ocean to use for docker-machine
+DO_TOKEN #Digital Ocean API token for creating/deleting droplets
+
+# for Digital Ocean block storage
+REXRAY_DO_TOKEN #Digital Ocean API token so RexRay can create storage volumes, can be same as DO_TOKEN
+
 ```
 
 ### Step 2: (single node local Swarm)

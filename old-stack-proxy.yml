@@ -1,5 +1,7 @@
 version: '3.3'
 
+# this is an alternate proxy setup using haproxy
+
 services:
 
   proxy:
