@@ -1,4 +1,4 @@
-# dogvscat (Work In Progress. This How-To Isn't Finished Yet)
+# dogvscat (Work In Progress. Not a fully documented walk-through yet)
 
 This repo gives a few examples of patterns for how you might build Docker Swarm clusters with all the bells and whistles. 
 
@@ -38,7 +38,7 @@ You can do all this locally on a single node or optionally using Docker Machine 
 
 The scripts and compose/stack files use variables to make this demo easier to get started. Set these at your shell before running commands
 
-```
+```shell
 # for Digital Ocean docker-machine driver
 SSH_FINGERPRINT #fingerprint used to match your SSH key to Digital Ocean's
 DO_SIZE #instance size for Digital Ocean to use for docker-machine
@@ -62,6 +62,14 @@ Then just create a single-node Swarm in that engine:
 `./create-servers.sh` gives example docker-machine commands for creating 3 nodes in various VM environments including locally with VirtualBox, Hyper-V, and in the cloud using Digital Ocean.
 
 ### Step 3: Enable Docker Engine Metrics
+
+`./enable-monitoring.sh` simply overwrite `/etc/docker/daemon.json` (we assume it doesn't exist) with two options to enabling the metrics endpoint, which will help Prometheus with more metrics.
+```json
+{
+  "metrics-addr" : "0.0.0.0:9323",
+  "experimental" : true
+}
+```
 
 ### Step 4: Initialize Swarm and Join Nodes
 
