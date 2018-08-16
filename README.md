@@ -1,5 +1,10 @@
 # dogvscat (Work In Progress. Not a fully documented walk-through yet)
 
+Meanwhile, follow along this presentation I made during DockerCon 2018
+https://dockercon2018.hubs.vidyard.com/watch/k3Cv676wmxAwYDxbvcgcgC
+
+[![screen shot 2018-08-16 at 2 14 20 pm](https://user-images.githubusercontent.com/6694151/44226710-bcb86900-a15e-11e8-87cf-ad930cfc8241.jpg)](https://dockercon2018.hubs.vidyard.com/watch/k3Cv676wmxAwYDxbvcgcgC)
+
 This repo gives a few examples of patterns for how you might build Docker Swarm clusters with all the bells and whistles. 
 
 A Docker Swarm cluster needs more then just your app running, it often needs at least these additional services:
