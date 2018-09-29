@@ -1,8 +1,15 @@
 version: "3.4"
 
+# 1. WORKAROUND: would prefer this use null network driver, will use bride for now to avoid overlay
+# 2. TODO: would prefer on-failure restart_policy, but need to run this in script to look
+# for if plugin exists first before reinstalling
+# 3. TODO: would prefer this picks a driver version, and support driver updates
+
 services:
   plugin-rexray:
     image: mavenugo/swarm-exec:17.03.0-ce
+    networks:
+      - bridge
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command: docker plugin install --grant-all-permissions rexray/dobs DOBS_REGION=nyc3 DOBS_TOKEN="${REXRAY_DO_TOKEN}" DOBS_CONVERTUNDERSCORES=true
@@ -15,4 +22,7 @@ services:
       options:
         max-size: "500k"
 
-
+networks:
+  bridge:
+    external: true
+    name: bridge

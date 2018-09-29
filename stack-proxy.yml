@@ -20,20 +20,23 @@ services:
       - --docker.domain=traefik
       - --docker.watch
       - --api
-      - --defaultentrypoints=http,https
-      - --acme
-      - --acme.email=bret@bretfisher.com
-        # TODO: envvar for email and default domain
-      - --acme.httpchallenge
-      - --acme.httpchallenge.entrypoint=http
-      - --acme.onhostrule=true
-      - --acme.entrypoint=https
-      - --entryPoints=Name:https Address::443 TLS
-      - --entryPoints=Name:http Address::80
-      - --acme.storage=/etc/traefik/acme/acme.json
-      - --acme.acmelogging
-      - --acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      # - --defaultentrypoints=http,https
+      # - --acme
+      # - --acme.email=bret@bretfisher.com
+      #   # TODO: envvar for email and default domain
+      # - --acme.httpchallenge
+      # - --acme.httpchallenge.entrypoint=http
+      # - --acme.onhostrule=true
+      # - --acme.entrypoint=https
+      # - --entryPoints=Name:https Address::443 TLS
+      # - --entryPoints=Name:http Address::80
+      # - --acme.storage=/etc/traefik/acme/acme.json
+      # - --acme.acmelogging
+      # - --acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
       # - --acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+    deploy:
+      placement:
+        constraints: [node.role == manager]
     logging:
       options:
         max-size: "500k"
