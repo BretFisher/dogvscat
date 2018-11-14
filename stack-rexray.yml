@@ -1,4 +1,4 @@
-version: "3.4"
+version: "3.5"
 
 # 1. WORKAROUND: would prefer this use null network driver, will use bride for now to avoid overlay
 # 2. TODO: would prefer on-failure restart_policy, but need to run this in script to look

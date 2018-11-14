@@ -3,7 +3,7 @@ version: '3.3'
 services:
 
   traefik:
-    image: traefik:1.6-alpine
+    image: traefik:1.7-alpine
     networks:
       - proxy
     volumes:
