@@ -68,7 +68,7 @@ services:
       - frontend
       - backend
     deploy:
-      replicas: 1
+      replicas: 2
     # logging:
     #   driver: "gelf"
     #   options:
