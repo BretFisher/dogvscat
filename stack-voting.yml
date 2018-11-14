@@ -1,4 +1,4 @@
-version: '3.5'
+version: '3.7'
 
 services:
 
@@ -35,7 +35,7 @@ services:
       - frontend
       - proxy
     deploy:
-      replicas: 1
+      replicas: 2
       labels:
         - traefik.port=80
         - traefik.docker.network=proxy
@@ -51,10 +51,12 @@ services:
       - backend
       - proxy
     deploy:
+      replicas: 2
       labels:
         - traefik.port=80
         - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:result.dogvs.cat
+        - traefik.backend.loadbalancer.stickiness=true
     # logging:
     #   driver: "gelf"
     #   options:
