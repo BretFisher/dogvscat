@@ -41,6 +41,29 @@ services:
       options:
         max-size: "500k"
 
+# NOTE: this config hasn't been validated yet
+# check Issue #6 for status
+# https://github.com/BretFisher/dogvscat/issues/6
+  # dockersocket:
+    # image: tecnativa/docker-socket-proxy
+    # networks:
+      # - proxy
+    # volumes:
+      # - /var/run/docker.sock:/var/run/docker.sock
+    # environment:
+      # CONTAINERS: 1
+      # NETWORKS: 1
+      # SERVICES: 1
+      # SWARM: 1
+      # TASKS: 1
+    # deploy:
+      # mode: global
+      # placement:
+        # constraints:
+          # - node.role == manager
+    # logging:
+      # options:
+        # max-size: "500k"
 
 volumes:
   acme:
