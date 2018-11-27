@@ -1,4 +1,4 @@
-# dogvscat (Work In Progress. Not a fully documented walk-through yet)
+# Dog vs. Cat (Work In Progress. Not fully documented)
 
 Meanwhile, follow along this presentation I made during DockerCon 2018
 https://dockercon2018.hubs.vidyard.com/watch/k3Cv676wmxAwYDxbvcgcgC
