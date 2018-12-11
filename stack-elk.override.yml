@@ -1,0 +1,10 @@
+version: '3.3'
+
+services:
+  logstash:
+    ports:
+      - "12201:12201/udp"
+
+configs:
+    logstash_pipeline:
+      file: logstash.conf
