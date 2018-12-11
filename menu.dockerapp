@@ -1,0 +1,45 @@
+# This section contains your application metadata.
+# Version of the application
+version: 0.1.0
+# Name of the application
+name: menu
+# A short description of the application
+description: 
+# Namespace to use when pushing to a registry. This is typically your Hub username.
+namespace: dogvscat
+# List of application maintainers with name and email for each
+maintainers:
+  - name: Bret Fisher
+    email: bret@bretfisher.com
+
+---
+# This section contains the Compose file that describes your application services.
+version: '3.4'
+
+services:
+
+  menu:
+    image: bretfisher/dogvscat-menu
+    build:
+      context: menu
+    deploy:
+      replicas: 3
+      labels:
+        - traefik.port=80
+        - traefik.docker.network=proxy
+        - traefik.frontend.rule=Host:www.dogvs.cat,dogvs.cat
+    # logging:
+    #   driver: "gelf"
+    #   options:
+    #     gelf-address: "udp://127.0.0.1:5000"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
+
+
+---
+# This section contains the default values for your application settings.
+{}

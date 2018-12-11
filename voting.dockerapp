@@ -1,0 +1,112 @@
+# This section contains your application metadata.
+# Version of the application
+version: 0.1.0
+# Name of the application
+name: voting
+# A short description of the application
+description: 
+# Namespace to use when pushing to a registry. This is typically your Hub username.
+namespace: dogvscat
+# List of application maintainers with name and email for each
+maintainers:
+  - name: Bret Fisher
+    email: bret@bretfisher.com
+
+---
+# This section contains the Compose file that describes your application services.
+version: '3.7'
+
+services:
+
+  redis:
+    image: redis:alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - frontend
+    deploy:
+      endpoint_mode: dnsrr
+    # logging:
+    #   driver: "gelf"
+    #   options:
+    #     gelf-address: "udp://127.0.0.1:5000"
+
+  db:
+    image: postgres:9.6
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    deploy:
+      endpoint_mode: dnsrr
+    # logging:
+    #   driver: "gelf"
+    #   options:
+    #     gelf-address: "udp://127.0.0.1:5000"
+
+  vote:
+    image: bretfisher/examplevotingapp_vote
+    networks:
+      - frontend
+      - proxy
+    deploy:
+      replicas: 2
+      labels:
+        - traefik.port=80
+        - traefik.docker.network=proxy
+        - traefik.frontend.rule=Host:vote.dogvs.cat
+    # logging:
+    #   driver: "gelf"
+    #   options:
+    #     gelf-address: "udp://127.0.0.1:5000"
+
+  result:
+    image: bretfisher/examplevotingapp_result
+    networks:
+      - backend
+      - proxy
+    deploy:
+      replicas: 2
+      labels:
+        - traefik.port=80
+        - traefik.docker.network=proxy
+        - traefik.frontend.rule=Host:result.dogvs.cat
+        - traefik.backend.loadbalancer.stickiness=true
+    # logging:
+    #   driver: "gelf"
+    #   options:
+    #     gelf-address: "udp://127.0.0.1:5000"
+
+  worker:
+    image: bretfisher/examplevotingapp_worker:java
+    networks:
+      - frontend
+      - backend
+    deploy:
+      replicas: 2
+    # logging:
+    #   driver: "gelf"
+    #   options:
+    #     gelf-address: "udp://127.0.0.1:5000"
+        
+networks:
+  frontend: {}
+  backend: {}
+  proxy:
+    external: true
+
+volumes:
+  db-data:
+    driver: rexray/dobs
+    driver_opts:
+      size: 1
+  redis-data:
+    driver: rexray/dobs
+    driver_opts:
+      size: 1
+
+
+---
+# This section contains the default values for your application settings.
+{}
