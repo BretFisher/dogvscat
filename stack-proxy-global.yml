@@ -1,0 +1,140 @@
+# this traefik reverse proxy has a bunch of features:
+# - reverse proxy all 80/443 ingress traffic on a swarm
+# - dynamic config via each app's swarm service labels
+# - HA multi-container design for traefik
+# - runs traefik on host NIC directly, to improve performance
+#    and capture client IP's
+# - uses consul to store static config for startup
+# - uses socat to allow offloading traefik to worker nodes
+# - store consul data in a volume on cloud storage with rexray
+
+# TODO improvements
+# make consul HA
+# properly handle service restarts if init container config changes
+# use envvars for email and default domain settings
+
+version: '3.7'
+
+services:
+
+  traefik-init:
+    image: traefik:1.7-alpine
+    networks:
+      - traefik-private
+    command:
+      # Use your favourite settings here, but add:
+      - storeconfig
+      - --api
+      - --docker
+      - --docker.endPoint=http://dockersocket:2375
+      - --docker.swarmMode
+      - --docker.domain=traefik
+      - --docker.watch
+      - --consul
+      - --consul.endpoint=consul:8500
+      - --consul.prefix=traefik
+      - --defaultentrypoints=http,https
+      - --entryPoints=Name:https Address::443 TLS
+      - --entryPoints=Name:http Address::80
+      - --acme
+      - --acme.email=bret@bretfisher.com
+      #   # TODO: envvar for email and default domain
+      - --acme.httpchallenge
+      - --acme.httpchallenge.entrypoint=http
+      - --acme.onhostrule=true
+      - --acme.entrypoint=https
+      - --acme.storage=my/key
+      - --acme.acmelogging
+      - --acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      # - --acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+    deploy:
+      restart_policy:
+        condition: on-failure
+    logging:
+      options:
+        max-size: "500k"
+
+  traefik:
+    image: traefik:1.7-alpine
+    networks:
+      - proxy
+      - traefik-private
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: 443
+        protocol: tcp
+        mode: host
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: ingress # traefik dashboard
+    command:
+      - --consul
+      - --consul.endpoint=consul:8500
+      - --consul.prefix=traefik
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.role == manager]
+    logging:
+      options:
+        max-size: "500k"
+
+  consul:
+    image: consul
+    command: agent -server -bootstrap-expect=1
+    networks:
+      - traefik-private
+    volumes:
+      - consul:/consul/data
+    environment:
+      - CONSUL_LOCAL_CONFIG={"datacenter":"us_east2","server":true}
+      - CONSUL_BIND_INTERFACE=eth0
+      - CONSUL_CLIENT_INTERFACE=eth0
+    deploy:
+      replicas: 1
+    networks:
+      - traefik-private
+    logging:
+      options:
+        max-size: "500k"
+
+# this socat proxy allows us to move traefik to worker nodes
+# while this container listens on managers and only allows
+# traefik to connect
+  dockersocket:
+    image: tecnativa/docker-socket-proxy
+    networks:
+      - traefik-private
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      CONTAINERS: 1
+      NETWORKS: 1
+      SERVICES: 1
+      SWARM: 1
+      TASKS: 1
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.role == manager]
+    logging:
+      options:
+        max-size: "500k"
+
+volumes:
+  consul:
+    driver: rexray/dobs
+    driver_opts:
+      size: 1
+
+networks:
+  proxy:
+    driver: overlay
+    name: proxy
+  traefik-private:
+    driver: overlay

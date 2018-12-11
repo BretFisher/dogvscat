@@ -1,4 +1,8 @@
-version: '3.3'
+# simple proxy example using traefik single container
+# for a more full-featured solution with multi-node proxy,
+# HA, consul backend, and more, see stack-proxy-global.yml
+
+version: '3.7'
 
 services:
 
@@ -20,50 +24,26 @@ services:
       - --docker.domain=traefik
       - --docker.watch
       - --api
-      # - --defaultentrypoints=http,https
-      # - --acme
-      # - --acme.email=bret@bretfisher.com
+      - --defaultentrypoints=http,https
+      - --acme
+      - --acme.email=bret@bretfisher.com
       #   # TODO: envvar for email and default domain
-      # - --acme.httpchallenge
-      # - --acme.httpchallenge.entrypoint=http
-      # - --acme.onhostrule=true
-      # - --acme.entrypoint=https
-      # - --entryPoints=Name:https Address::443 TLS
-      # - --entryPoints=Name:http Address::80
-      # - --acme.storage=/etc/traefik/acme/acme.json
-      # - --acme.acmelogging
+      - --acme.httpchallenge
+      - --acme.httpchallenge.entrypoint=http
+      - --acme.onhostrule=true
+      - --acme.entrypoint=https
+      - --entryPoints=Name:https Address::443 TLS
+      - --entryPoints=Name:http Address::80
+      - --acme.storage=/etc/traefik/acme/acme.json
+      - --acme.acmelogging
       # - --acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
-      # - --acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+      - --acme.caserver=https://acme-v02.api.letsencrypt.org/directory
     deploy:
       placement:
         constraints: [node.role == manager]
     logging:
       options:
         max-size: "500k"
-
-# NOTE: this config hasn't been validated yet
-# check Issue #6 for status
-# https://github.com/BretFisher/dogvscat/issues/6
-  # dockersocket:
-    # image: tecnativa/docker-socket-proxy
-    # networks:
-      # - proxy
-    # volumes:
-      # - /var/run/docker.sock:/var/run/docker.sock
-    # environment:
-      # CONTAINERS: 1
-      # NETWORKS: 1
-      # SERVICES: 1
-      # SWARM: 1
-      # TASKS: 1
-    # deploy:
-      # mode: global
-      # placement:
-        # constraints:
-          # - node.role == manager
-    # logging:
-      # options:
-        # max-size: "500k"
 
 volumes:
   acme:
@@ -73,4 +53,5 @@ volumes:
 
 networks:
   proxy:
-    external: true
+    driver: overlay
+    name: proxy
