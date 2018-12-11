@@ -1,4 +1,4 @@
-# Dog vs. Cat (Work In Progress. Not fully documented)
+# Dog vs. Cat (Docker Swarm Production Stacks on Stacks on Stacks)
 
 Meanwhile, follow along this presentation I made during DockerCon 2018
 https://dockercon2018.hubs.vidyard.com/watch/k3Cv676wmxAwYDxbvcgcgC
