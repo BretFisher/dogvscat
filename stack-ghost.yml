@@ -12,7 +12,7 @@ services:
       database__client: mysql
       database__connection__host: db
       database__connection__user: root
-      database__connection__password: YOURDBPASSWORDhereee
+      database__connection__password: YOURDBPASSWORDhere
       database__connection__database: ghost
       url: http://ghost.dogvs.cat
     deploy:
@@ -31,7 +31,7 @@ services:
     volumes:
       - db:/var/lib/mysql
     secrets:
-      - db-password2
+      - db-password
     networks:
       - ghost
     deploy:
@@ -43,7 +43,7 @@ services:
     #   options:
     #     gelf-address: "udp://127.0.0.1:5000"
 
-
+# NOTE: table locking is a concern. Maybe use --single-transaction=TRUE for innoDB
   db-backup:
     image: mysql:5.7
     command: sh -c "while true; do /usr/bin/mysqldump -u root --password=$$(< $$MYSQL_ROOT_PASSWORD_FILE) --all-databases --host=db > /backup/backup$$(date +'%H').sql ; sleep 3600; done"
@@ -84,6 +84,7 @@ volumes:
 secrets:
   db-password:
     file: ./secret-ghost-db
+    name: db-password
 
 
 

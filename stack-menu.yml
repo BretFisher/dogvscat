@@ -3,7 +3,7 @@ version: '3.4'
 services:
 
   menu:
-    image: bretfisher/dogvscat-menu
+    image: dogvscat/menu
     build:
       context: menu
     deploy:
