@@ -138,3 +138,5 @@ networks:
     name: proxy
   traefik-private:
     driver: overlay
+    driver_opts:
+      encrypted: true # since we're passing SSL certs and docker socket stuff over TCP, lets IPSec
