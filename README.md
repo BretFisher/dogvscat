@@ -10,7 +10,7 @@ This repo gives a few examples of patterns for how you might build Docker Swarm 
 A Docker Swarm cluster needs more then just your app running, it often needs at least these additional services:
 
 - Layer 7 Reverse Proxy (to host multiple HTTP sites on one port)
-- Swarm-aware storage for data persistance
+- Swarm-aware storage for data persistence
 - Centralized logging of your app containers
 - Centralized monitoring of nodes and containers
 - Cluster management GUI
@@ -18,13 +18,16 @@ A Docker Swarm cluster needs more then just your app running, it often needs at 
 
 This demo is meant for you to `git clone` and run locally to help you learn the tools and methods for building a complete Docker Swarm cluster.
 
-# Major To-Do's left
+# Major To-Do's left (see feature requests in Issues)
 
+- [ ] Show how docker-app could be used for better Continuous Deployment
+- [ ] Show how to deploy servers with simple Terraform and/or Ansible examples
+- [ ] Show how 18.09 SSH makes remote admin so easy
 - [ ] Pull out everything that needs envvars
 - [ ] Use Docker Swarm Secrets for privates
 - [ ] Fix Docker EE Ansible permissions on ELB's and Security groups for port 8080 (app ELB)
-- [ ] Better README step-by-step
-- [ ] Walkthough videos
+- [x] Better README step-by-step
+- [x] Walkthough videos
 
 ## Getting Started
 
@@ -68,7 +71,7 @@ Then just create a single-node Swarm in that engine:
 
 ### Step 3: Enable Docker Engine Metrics
 
-`./enable-monitoring.sh` simply overwrite `/etc/docker/daemon.json` (we assume it doesn't exist) with two options to enabling the metrics endpoint, which will help Prometheus with more metrics.
+`./enable-monitoring.sh` simply overwrite `/etc/docker/daemon.json` (we assume it doesn't exist) with two options to enabling the metrics endpoint, which will help Prometheus with more metrics later.
 ```json
 {
   "metrics-addr" : "0.0.0.0:9323",
@@ -78,13 +81,51 @@ Then just create a single-node Swarm in that engine:
 
 ### Step 4: Initialize Swarm and Join Nodes
 
+`./create-swarm.sh` gives example docker-machine ssh commands for `docker swarm init` and `join` operations.
+
+After this finishes, if you're using my docker-machine example you can connect to Docker TLS endpoint on node1 via:
+
+`docker-machine env dvc1` and then copy/paste the last line of output for your OS.
+
 ### Step 5: Enable Persistent Storage with REX-Ray
+
+From this point on, everything is in stack files! No custom node config's needed. 🎉
+
+`docker stack deploy -c stack-rexray.yml rexray`
+
+This sets up a global service to run a docker command against the host docker socket via bind-mount to install the storage driver for your cloud. Change the driver name to your cloud or docker volume storage plug-in vendor. This method of wrapping swarm-exec in a global mode service also means any new nodes to join the Swarm later will get the driver installed.
+
+**The above shows off how you can use swarm-exec utility to run a command (even a docker host command) on a set of nodes**
 
 ### Step 6: Deploy Reverse Proxy using Traefik
 
+Simple Proxy: `docker stack deploy -c stack-proxy.yml proxy`
+
+This sets up a simple single-container proxy using Swarms ingress routing mesh to reverse proxy ports 80 and 443. It's good for demos and personal setups but you'll likely want something more as you grow.
+
+**The above shows off how you can use a reverse proxy to control traffic to many web URL's via their DNS name, and also includes Let's Encrypt dynamic config and cert requests**
+
+Advanced Proxy: `docker stack deploy -c stack-proxy-global.yml proxy`
+
+This example builds on the simple proxy and adds a global mode Traefik service for HA proxy, and also runs the 80/443 listeners on the host NIC for improved performance and gathering of real client IP's (it then uses overlay networks to talk to app services). For HA Traefik it needs a key/value store so this example uses a single Consul container with RexRay storage. Lastly, it enables a socat container to allow Traefik to run on worker nodes while it uses TCP to talk to the Swarm management API via socat redirect.
+
+**The above shows off how to use host NIC directly in a service to avoid routing mesh, how to encrypt a network with IPSec, and how to use socat to redirect a docker socket to the network so you can void putting management containers on managers.**
+
 ### Step 7: Deploy Ops Tools: ELK, Prometheus, and Portainer
 
-### Step 8: Deploy sample apps and test
+`docker stack deploy -c docker-elk/docker-stack.yml -c elk.override.yml elk`
+`docker stack deploy -c swarmprom/docker-compose.yml prom`
+`docker stack deploy -c stack-portainer.yml portainer`
+
+### Step 8: Deploy management tasks like prune
+
+`docker stack deploy -c stack-prune.yml prune`
+
+### Step 9: Deploy sample apps and test
+
+`docker stack deploy -c stack-menu.yml menu`
+`docker stack deploy -c stack-voting.yml vote`
+`docker stack deploy -c stack-ghost.yml ghost`
 
 ## Deploying the Swarm EE Example
 
@@ -92,7 +133,7 @@ Then just create a single-node Swarm in that engine:
 
 ### Using Docker Machine? Really???
 - Don't throw out the good in search of the perfect
-- DM works fine solo admins with 3-20 cloud servers
+- DM works fine solo admins with 3-10 cloud servers
 - Be sure to backup certs from .docker/machine/machines
 - If you're a team of 2-3 and still want to try sticking with DM, maybe try:
   - https://github.com/bhurlow/machine-share
