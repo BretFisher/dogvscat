@@ -5,7 +5,7 @@
 # - runs traefik on host NIC directly, to improve performance
 #    and capture client IP's
 # - uses consul to store static config for startup
-# - uses socat to allow offloading traefik to worker nodes
+# - uses haproxy to allow offloading traefik to worker nodes
 # - store consul data in a volume on cloud storage with rexray
 
 # TODO improvements
@@ -20,7 +20,7 @@ services:
   traefik-init:
     image: traefik:1.7-alpine
     networks:
-      - traefik-private
+      - traefik-consul
     command:
       # Use your favourite settings here, but add:
       - storeconfig
@@ -58,7 +58,8 @@ services:
     image: traefik:1.7-alpine
     networks:
       - proxy
-      - traefik-private
+      - traefik-consul
+      - traefik-docker
     ports:
       - target: 80
         published: 80
@@ -88,7 +89,7 @@ services:
     image: consul
     command: agent -server -bootstrap-expect=1
     networks:
-      - traefik-private
+      - traefik-consul
     volumes:
       - consul:/consul/data
     environment:
@@ -97,21 +98,20 @@ services:
       - CONSUL_CLIENT_INTERFACE=eth0
     deploy:
       replicas: 1
-    networks:
-      - traefik-private
     logging:
       options:
         max-size: "500k"
 
-# this socat proxy allows us to move traefik to worker nodes
+# this custom haproxy allows us to move traefik to worker nodes
 # while this container listens on managers and only allows
-# traefik to connect
+# traefik to connect, read-only, to limited docker api calls
+# https://github.com/Tecnativa/docker-socket-proxy
   dockersocket:
     image: tecnativa/docker-socket-proxy
     networks:
-      - traefik-private
+      - traefik-docker
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       CONTAINERS: 1
       NETWORKS: 1
@@ -136,7 +136,13 @@ networks:
   proxy:
     driver: overlay
     name: proxy
-  traefik-private:
+  traefik-consul:
     driver: overlay
     driver_opts:
-      encrypted: true # since we're passing SSL certs and docker socket stuff over TCP, lets IPSec
+      encrypted: 'true'
+      # since we're passing SSL certs over TCP, lets IPSec
+  traefik-docker:
+    driver: overlay
+    driver_opts:
+      encrypted: 'true'
+      # since we're passing docker socket stuff over TCP, lets IPSec
