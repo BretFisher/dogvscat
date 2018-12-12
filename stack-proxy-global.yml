@@ -79,8 +79,9 @@ services:
       - --consul.prefix=traefik
     deploy:
       mode: global
-      placement:
-        constraints: [node.role == manager]
+      # if you have enough servers, make this only run on workers, maybe in a public DMZ
+      # placement:
+        # constraints: [node.role == worker]
     logging:
       options:
         max-size: "500k"
