@@ -36,16 +36,16 @@ services:
       - --defaultentrypoints=http,https
       - --entryPoints=Name:https Address::443 TLS
       - --entryPoints=Name:http Address::80
-      - --acme
-      - --acme.email=bret@bretfisher.com
+      # - --acme
+      # - --acme.email=${TRAEFIK_ACME_EMAIL}
       #   # TODO: envvar for email and default domain
-      - --acme.httpchallenge
-      - --acme.httpchallenge.entrypoint=http
-      - --acme.onhostrule=true
-      - --acme.entrypoint=https
-      - --acme.storage=my/key
-      - --acme.acmelogging
-      - --acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      # - --acme.httpchallenge
+      # - --acme.httpchallenge.entrypoint=http
+      # - --acme.onhostrule=true
+      # - --acme.entrypoint=https
+      # - --acme.storage=my/key
+      # - --acme.acmelogging
+      # - --acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
       # - --acme.caserver=https://acme-v02.api.letsencrypt.org/directory
     deploy:
       restart_policy:
@@ -92,7 +92,7 @@ services:
     volumes:
       - consul:/consul/data
     environment:
-      - CONSUL_LOCAL_CONFIG={"datacenter":"us_east2","server":true}
+      - CONSUL_LOCAL_CONFIG={"server":true}
       - CONSUL_BIND_INTERFACE=eth0
       - CONSUL_CLIENT_INTERFACE=eth0
     deploy:
