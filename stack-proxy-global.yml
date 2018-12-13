@@ -112,13 +112,15 @@ services:
     networks:
       - traefik-docker
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      CONTAINERS: 1
+      # CONTAINERS: 1
       NETWORKS: 1
       SERVICES: 1
-      SWARM: 1
+      # SWARM: 1
       TASKS: 1
+    configs:
+
     deploy:
       mode: global
       placement:
