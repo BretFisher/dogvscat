@@ -119,8 +119,6 @@ services:
       SERVICES: 1
       # SWARM: 1
       TASKS: 1
-    configs:
-
     deploy:
       mode: global
       placement:
