@@ -1,8 +1,18 @@
 version: '3.7'
 
+x-default-opts: 
+  &default-opts
+  logging:
+    options:
+      max-size: "1m" 
+  # driver: "gelf"
+  # options:
+  #   gelf-address: "udp://127.0.0.1:5000"
+
 services:
 
   redis:
+    <<: *default-opts
     image: redis:alpine
     command: redis-server --appendonly yes
     volumes:
@@ -11,12 +21,9 @@ services:
       - frontend
     deploy:
       endpoint_mode: dnsrr
-    # logging:
-    #   driver: "gelf"
-    #   options:
-    #     gelf-address: "udp://127.0.0.1:5000"
-
+  
   db:
+    <<: *default-opts
     image: postgres:9.6
     volumes:
       - db-data:/var/lib/postgresql/data
@@ -24,12 +31,9 @@ services:
       - backend
     deploy:
       endpoint_mode: dnsrr
-    # logging:
-    #   driver: "gelf"
-    #   options:
-    #     gelf-address: "udp://127.0.0.1:5000"
 
   vote:
+    <<: *default-opts
     image: bretfisher/examplevotingapp_vote
     networks:
       - frontend
@@ -40,12 +44,9 @@ services:
         - traefik.port=80
         - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:vote.dogvs.cat
-    # logging:
-    #   driver: "gelf"
-    #   options:
-    #     gelf-address: "udp://127.0.0.1:5000"
 
   result:
+    <<: *default-opts
     image: bretfisher/examplevotingapp_result
     networks:
       - backend
@@ -57,22 +58,15 @@ services:
         - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:result.dogvs.cat
         - traefik.backend.loadbalancer.stickiness=true
-    # logging:
-    #   driver: "gelf"
-    #   options:
-    #     gelf-address: "udp://127.0.0.1:5000"
 
   worker:
+    <<: *default-opts
     image: bretfisher/examplevotingapp_worker:java
     networks:
       - frontend
       - backend
     deploy:
       replicas: 2
-    # logging:
-    #   driver: "gelf"
-    #   options:
-    #     gelf-address: "udp://127.0.0.1:5000"
         
 networks:
   frontend: {}
@@ -82,11 +76,13 @@ networks:
 
 volumes:
   db-data:
-    driver: rexray/dobs
+    driver: ${DOCKER_VOL_DRIVER:-local}
+    # for example set DOCKER_VOL_DRIVER="rexray/dobs"
     driver_opts:
       size: 1
   redis-data:
-    driver: rexray/dobs
+    driver: ${DOCKER_VOL_DRIVER:-local}
+    # for example set DOCKER_VOL_DRIVER="rexray/dobs"
     driver_opts:
       size: 1
 

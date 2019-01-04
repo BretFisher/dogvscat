@@ -15,9 +15,19 @@
 
 version: '3.7'
 
+x-default-opts: 
+  &default-opts
+  logging:
+    options:
+      max-size: "1m" 
+  # driver: "gelf"
+  # options:
+  #   gelf-address: "udp://127.0.0.1:5000"
+
 services:
 
   traefik-init:
+    <<: *default-opts
     image: traefik:1.7-alpine
     networks:
       - traefik-consul
@@ -25,6 +35,10 @@ services:
       # Use your favourite settings here, but add:
       - storeconfig
       - --api
+      # NOTE: you'll want to lower this logLevel for real word stuff
+      - --logLevel="DEBUG"
+      # NOTE: you'll want to disable this for anything of signifant traffic, or route logs outside stdout
+      - --accessLog
       - --docker
       - --docker.endPoint=http://dockersocket:2375
       - --docker.swarmMode
@@ -50,11 +64,9 @@ services:
     deploy:
       restart_policy:
         condition: on-failure
-    logging:
-      options:
-        max-size: "500k"
 
   traefik:
+    <<: *default-opts
     image: traefik:1.7-alpine
     networks:
       - proxy
@@ -82,11 +94,9 @@ services:
       # if you have enough servers, make this only run on workers, maybe in a public DMZ
       # placement:
         # constraints: [node.role == worker]
-    logging:
-      options:
-        max-size: "500k"
 
   consul:
+    <<: *default-opts
     image: consul
     command: agent -server -bootstrap-expect=1
     networks:
@@ -97,17 +107,13 @@ services:
       - CONSUL_LOCAL_CONFIG={"server":true}
       - CONSUL_BIND_INTERFACE=eth0
       - CONSUL_CLIENT_INTERFACE=eth0
-    deploy:
-      replicas: 1
-    logging:
-      options:
-        max-size: "500k"
 
 # this custom haproxy allows us to move traefik to worker nodes
 # while this container listens on managers and only allows
 # traefik to connect, read-only, to limited docker api calls
 # https://github.com/Tecnativa/docker-socket-proxy
   dockersocket:
+    <<: *default-opts
     image: tecnativa/docker-socket-proxy
     networks:
       - traefik-docker
@@ -123,13 +129,11 @@ services:
       mode: global
       placement:
         constraints: [node.role == manager]
-    logging:
-      options:
-        max-size: "500k"
 
 volumes:
   consul:
-    driver: rexray/dobs
+    driver: ${DOCKER_VOL_DRIVER:-local}
+    # for example set DOCKER_VOL_DRIVER="rexray/dobs"
     driver_opts:
       size: 1
 

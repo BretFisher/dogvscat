@@ -1,8 +1,19 @@
 version: '3'
 
+x-default-opts: &default-opts:
+  logging:
+    options:
+      max-size: "1m" 
+
+  # logging:
+  #   driver: "gelf"
+  #   options:
+  #     gelf-address: "udp://127.0.0.1:5000"
+
 services:
 
   viz:
+    <<: *default-opts
     image: dockersamples/visualizer
     deploy:
       replicas: 1
@@ -12,8 +23,4 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - 4040:8080
-    logging:
-      options:
-        max-size: "500k"
-
 
