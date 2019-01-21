@@ -16,13 +16,15 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "8080:8080" # traefik dashboard
     command:
       # Use your favourite settings here, but add:
       - --docker
       - --docker.swarmMode
       - --docker.domain=traefik
       - --docker.watch
+      - --docker.network=proxy
+      - --docker.exposedByDefault=false
+      - --logLevel=DEBUG
       - --api
       - --defaultentrypoints=http,https
       # - --acme
@@ -39,6 +41,10 @@ services:
       # - --acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
       # - --acme.caserver=https://acme-v02.api.letsencrypt.org/directory
     deploy:
+      labels:                           
+        - traefik.enable=true
+        - traefik.port=8080
+        - traefik.frontend.rule=Host:traefik.domain.com
       placement:
         constraints: [node.role == manager]
     logging:
