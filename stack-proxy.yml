@@ -52,7 +52,10 @@ services:
     deploy:
       placement:
         constraints: [node.role == manager]
-
+      labels:
+        - traefik.port=8080
+        - traefik.frontend.rule=Host:traefik.dogvs.cat
+ 
 volumes:
   acme:
     driver: rexray/dobs

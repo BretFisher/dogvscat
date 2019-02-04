@@ -92,6 +92,9 @@ services:
       - --consul.prefix=traefik
     deploy:
       mode: global
+      labels:
+        - traefik.port=8080
+        - traefik.frontend.rule=Host:traefik.dogvs.cat
       # if you have enough servers, make this only run on workers, maybe in a public DMZ
       # placement:
         # constraints: [node.role == worker]
