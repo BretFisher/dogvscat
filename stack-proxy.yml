@@ -4,9 +4,19 @@
 
 version: '3.7'
 
+x-default-opts: 
+  &default-opts
+  logging:
+    options:
+      max-size: "1m" 
+  # driver: "gelf"
+  # options:
+  #   gelf-address: "udp://127.0.0.1:5000"
+
 services:
 
   traefik:
+    <<: *default-opts
     image: traefik:1.7-alpine
     networks:
       - proxy
@@ -42,9 +52,6 @@ services:
     deploy:
       placement:
         constraints: [node.role == manager]
-    logging:
-      options:
-        max-size: "500k"
 
 volumes:
   acme:

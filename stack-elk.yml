@@ -1,8 +1,18 @@
-version: '3.5'
+version: '3.7'
+
+x-default-opts: 
+  &default-opts
+  logging:
+    options:
+      max-size: "1m" 
+  # driver: "gelf"
+  # options:
+  #   gelf-address: "udp://127.0.0.1:5000"
 
 services:
 
   elasticsearch:
+    <<: *default-opts
     image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.4.0
     configs:
       - source: elastic_config
@@ -16,11 +26,9 @@ services:
     deploy:
       mode: replicated
       replicas: 1
-    logging:
-      options:
-        max-size: "500k"
 
   logstash:
+    <<: *default-opts
     image: docker.elastic.co/logstash/logstash-oss:6.4.0
     ports:
       - "5000:5000"
@@ -38,12 +46,9 @@ services:
     deploy:
       mode: replicated
       replicas: 1
-    logging:
-      options:
-        max-size: "500k"
-
 
   kibana:
+    <<: *default-opts
     image: docker.elastic.co/kibana/kibana-oss:6.4.0
     configs:
       - source: kibana_config
@@ -59,11 +64,6 @@ services:
         - traefik.frontend.rule=Host:kibana.dogvs.cat
         - traefik.frontend.auth.basic=${KIBANA_USER:-admin}:${KIBANA_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK}
       # TODO: make secrets secret
-    logging:
-      options:
-        max-size: "500k"
-
-
 
 configs:
 

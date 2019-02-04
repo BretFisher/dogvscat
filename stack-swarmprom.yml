@@ -1,4 +1,13 @@
-version: "3.3"
+version: "3.7"
+
+x-default-opts: 
+  &default-opts
+  logging:
+    options:
+      max-size: "1m" 
+  # driver: "gelf"
+  # options:
+  #   gelf-address: "udp://127.0.0.1:5000"
 
 networks:
   net: {}
@@ -29,6 +38,7 @@ configs:
 
 services:
   dockerd-exporter:
+    <<: *default-opts
     image: stefanprodan/caddy
     networks:
       - net
@@ -44,12 +54,10 @@ services:
           memory: 128M
         reservations:
           memory: 64M
-    logging:
-      options:
-        max-size: "500k"
 
 
   cadvisor:
+    <<: *default-opts
     image: google/cadvisor
     networks:
       - net
@@ -67,12 +75,10 @@ services:
           memory: 128M
         reservations:
           memory: 64M
-    logging:
-      options:
-        max-size: "500k"
 
 
   grafana:
+    <<: *default-opts
     image: stefanprodan/swarmprom-grafana:5.3.4
     networks:
       - net
@@ -104,12 +110,10 @@ services:
           memory: 128M
         reservations:
           memory: 64M
-    logging:
-      options:
-        max-size: "500k"
 
 
   alertmanager:
+    <<: *default-opts
     image: stefanprodan/swarmprom-alertmanager:v0.14.0
     networks:
       - net
@@ -138,12 +142,10 @@ services:
           memory: 128M
         reservations:
           memory: 64M
-    logging:
-      options:
-        max-size: "500k"
 
 
   unsee:
+    <<: *default-opts
     image: cloudflare/unsee:v0.8.0
     networks:
       - net
@@ -158,12 +160,10 @@ services:
         - traefik.frontend.rule=Host:unsee.dogvs.cat
         - traefik.frontend.auth.basic=${UNSEE_USER:-admin}:${UNSEE_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK}
         # - com.df.users=${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}
-    logging:
-      options:
-        max-size: "500k"
 
 
   node-exporter:
+    <<: *default-opts
     image: stefanprodan/swarmprom-node-exporter:v0.16.0
     networks:
       - net
@@ -190,12 +190,10 @@ services:
           memory: 128M
         reservations:
           memory: 64M
-    logging:
-      options:
-        max-size: "500k"
 
 
   prometheus:
+    <<: *default-opts
     image: stefanprodan/swarmprom-prometheus:v2.5.0
     networks:
       - net
@@ -226,9 +224,6 @@ services:
           memory: 2048M
         reservations:
           memory: 128M
-    logging:
-      options:
-        max-size: "500k"
 
 
 

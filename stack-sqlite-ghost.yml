@@ -1,8 +1,18 @@
-version: '3.5'
+version: '3.7'
+
+x-default-opts: 
+  &default-opts
+  logging:
+    options:
+      max-size: "1m" 
+  # driver: "gelf"
+  # options:
+  #   gelf-address: "udp://127.0.0.1:5000"
 
 services:
 
   ghost:
+    <<: *default-opts
     image: ghost:2-alpine
     networks:
       - proxy
@@ -23,10 +33,6 @@ services:
       labels:
         - traefik.port=2368
         - traefik.frontend.rule=Host:ghost.dogvs.cat
-    # logging:
-    #   driver: "gelf"
-    #   options:
-    #     gelf-address: "udp://127.0.0.1:5000"
 
   # TODO: backup for static content
 

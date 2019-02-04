@@ -1,14 +1,13 @@
-version: '3'
+version: '3.7'
 
-x-default-opts: &default-opts:
+x-default-opts: 
+  &default-opts
   logging:
     options:
       max-size: "1m" 
-
-  # logging:
-  #   driver: "gelf"
-  #   options:
-  #     gelf-address: "udp://127.0.0.1:5000"
+  # driver: "gelf"
+  # options:
+  #   gelf-address: "udp://127.0.0.1:5000"
 
 services:
 

@@ -1,8 +1,18 @@
-version: '3.2'
+version: '3.7'
+
+x-default-opts: 
+  &default-opts
+  logging:
+    options:
+      max-size: "1m" 
+  # driver: "gelf"
+  # options:
+  #   gelf-address: "udp://127.0.0.1:5000"
 
 services:
 
   ghost:
+    <<: *default-opts
     image: ghost:1-alpine
     environment:
       # see https://docs.ghost.org/docs/config#section-running-ghost-with-config-env-variables
@@ -20,6 +30,7 @@ services:
 
 
   db:
+    <<: *default-opts
     image: mysql:5.7
     volumes:
       - db:/var/lib/mysql
@@ -31,6 +42,7 @@ services:
       MYSQL_ROOT_PASSWORD_FILE: /run/secrets/ghost-db-password
   
   db-backup:
+    <<: *default-opts
     image: mysql:5.7
     command: sh -c "while true; do /usr/bin/mysqldump -u root --password=$$(< $$MYSQL_ROOT_PASSWORD_FILE) --all-databases --host=db > /backup/backup$$(date +'%H').sql ; sleep 3600; done"
     volumes:

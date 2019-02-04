@@ -1,7 +1,17 @@
-version: "3.4"
+version: "3.7"
+
+x-default-opts: 
+  &default-opts
+  logging:
+    options:
+      max-size: "1m" 
+  # driver: "gelf"
+  # options:
+  #   gelf-address: "udp://127.0.0.1:5000"
 
 services:
   web:
+    <<: *default-opts
     image: portainer/portainer
     # command: -H "tcp://tasks.agent:9001"
     deploy:
@@ -18,6 +28,7 @@ services:
     volumes:
       - web:/data
   agent:
+    <<: *default-opts
     image: portainer/agent
     networks:
       - portainer
@@ -27,11 +38,6 @@ services:
       mode: global
     environment:
       AGENT_CLUSTER_ADDR: tasks.agent
-    logging:
-      options:
-        max-size: "500k"
-
-
 
 networks:
   proxy:

@@ -1,12 +1,22 @@
-version: "3.5"
+version: "3.7"
 
 # 1. WORKAROUND: would prefer this use null network driver, will use bride for now to avoid overlay
 # 2. TODO: would prefer on-failure restart_policy, but need to run this in script to look
 # for if plugin exists first before reinstalling
 # 3. TODO: would prefer this picks a driver version, and support driver updates
 
+x-default-opts: 
+  &default-opts
+  logging:
+    options:
+      max-size: "1m" 
+  # driver: "gelf"
+  # options:
+  #   gelf-address: "udp://127.0.0.1:5000"
+
 services:
   plugin-rexray:
+    <<: *default-opts
     image: mavenugo/swarm-exec:17.03.0-ce
     networks:
       - bridge
@@ -18,9 +28,6 @@ services:
       mode: global
       restart_policy:
         condition: none
-    logging:
-      options:
-        max-size: "500k"
 
 networks:
   bridge:
