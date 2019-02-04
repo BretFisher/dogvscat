@@ -22,6 +22,7 @@ services:
       - --docker
       - --docker.swarmMode
       - --docker.domain=traefik
+      - --docker.network=proxy
       - --docker.watch
       - --api
       - --defaultentrypoints=http,https

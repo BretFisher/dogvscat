@@ -43,6 +43,7 @@ services:
       - --docker.endPoint=http://dockersocket:2375
       - --docker.swarmMode
       - --docker.domain=traefik
+      - --docker.network=proxy
       - --docker.watch
       - --consul
       - --consul.endpoint=consul:8500
@@ -133,7 +134,7 @@ services:
 volumes:
   consul:
     driver: ${DOCKER_VOL_DRIVER:-local}
-    # for example set DOCKER_VOL_DRIVER="rexray/dobs"
+    # for example export DOCKER_VOL_DRIVER="rexray/dobs"
     driver_opts:
       size: 1
 

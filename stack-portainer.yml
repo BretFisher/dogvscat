@@ -11,7 +11,6 @@ services:
         # place on managers when not using agent, place on workers if using agent
       labels:
         - traefik.port=9000
-        - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:portainer.dogvs.cat
     networks:
       - proxy

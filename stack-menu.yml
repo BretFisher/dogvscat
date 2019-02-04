@@ -10,7 +10,6 @@ services:
       replicas: 3
       labels:
         - traefik.port=80
-        - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:www.dogvs.cat,dogvs.cat
     # logging:
     #   driver: "gelf"

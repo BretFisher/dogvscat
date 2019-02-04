@@ -42,7 +42,6 @@ services:
       replicas: 2
       labels:
         - traefik.port=80
-        - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:vote.dogvs.cat
 
   result:
@@ -55,7 +54,6 @@ services:
       replicas: 2
       labels:
         - traefik.port=80
-        - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:result.dogvs.cat
         - traefik.backend.loadbalancer.stickiness=true
 

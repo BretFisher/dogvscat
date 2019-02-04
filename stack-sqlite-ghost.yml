@@ -22,7 +22,6 @@ services:
       replicas: 1
       labels:
         - traefik.port=2368
-        - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:ghost.dogvs.cat
     # logging:
     #   driver: "gelf"

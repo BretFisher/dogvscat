@@ -56,7 +56,6 @@ services:
       replicas: 1
       labels:
         - traefik.port=5601
-        - traefik.docker.network=proxy
         - traefik.frontend.rule=Host:kibana.dogvs.cat
         - traefik.frontend.auth.basic=${KIBANA_USER:-admin}:${KIBANA_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK}
       # TODO: make secrets secret
