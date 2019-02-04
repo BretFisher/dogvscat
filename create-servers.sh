@@ -27,7 +27,7 @@ done
 #for server in {1..3}; do
 #docker-machine create \
 #  --driver=virtualbox \
-#  --virtualbox-memory=2 \
+#  --virtualbox-memory=2048 \
 #  dvc${server} &
 #done
 
@@ -38,7 +38,7 @@ done
 #for server in {1..3}; do
 #docker-machine create \
 #  --driver=hyperv \
-#  --hyperv-memory=2 \
+#  --hyperv-memory=2048 \
 #  --hyperv-virtual-switch="Primary Virtual Swtich" \
 #  dvc${server} &
 #done
