@@ -1,9 +1,11 @@
 version: '3.1'
 
 services:
-  images:
+  image-prune:
     image: docker
     command: sh -c "while true; do docker image prune -af; sleep 86400; done"
+    networks:
+      - bridge
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     deploy:
@@ -12,3 +14,8 @@ services:
     #   driver: "gelf"
     #   options:
     #     gelf-address: "tcp://127.0.0.1:5000"
+
+networks:
+  bridge:
+    external: true
+    name: bridge
