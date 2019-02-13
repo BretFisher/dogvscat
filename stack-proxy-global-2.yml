@@ -1,0 +1,115 @@
+#
+# Resources
+# Official - https://docs.traefik.io
+# Traefik - https://dockerswarm.rocks/traefik/
+# Bret Fisher - https://github.com/BretFisher/dogvscat/blob/master/stack-proxy-global.yml
+# KV https://docs.traefik.io/user-guide/kv-config/
+# https://blog.ruanbekker.com/blog/2017/10/24/managing-traefik-configuration-with-consul-on-docker-swarm/
+#
+
+#
+# Also see my README for more info on some quirks with Traefik - https://github.com/tmackness/docker-stacks/tree/master/swarm/traefik-proxy
+#
+
+version: "3.7"
+
+x-default-opts: &default-opts
+  logging:
+    options:
+      max-size: "1m"
+
+services:
+  traefik-init:
+    image: traefik:1.7-alpine
+    networks:
+      - traefik-docker # secure way to obtainer docker socket info
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command: # List of commands: https://docs.traefik.io/configuration/backends/docker/
+      - storeconfig # Save config to consul backend
+      - --api # Enable web UI
+      - --docker # Tells Traefik to listen to docker
+      - --docker.endPoint=http://dockersocket:2375 # use docker socket proxy service to securely access docker socket
+      - --docker.swarmMode # Enables swarm mode
+      - --docker.domain=domain.com # Sets defaul domain name.
+      - --docker.network=proxy # Sets default network to "proxy" thus not requiring a "traefik.docker.network=proxy" label on each service
+      - --docker.watch # Watch for docker changes
+      - --docker.exposedByDefault=false # Requires "traefik.enable=true" label in order for traefik to work on each service.
+      - --logLevel=DEBUG # Traefik loglevel use high level in prod e.g. INFO
+      - --traefikLog.filePath=/traefik.log
+      - --traefikLog.format=json
+      - --accessLog.filePath=/access.log
+      - --accessLog.format=json
+      - --consul # Add Consul backend
+      - --consul.endpoint=${CONSUL_HOST}:8500 # Consul endpoint - using env
+      - --consul.prefix=traefik # Consul traefik prefix
+      - --defaultentrypoints=http,https # Accpet both http and https
+
+  traefik:
+    <<: *default-opts
+    image: traefik:1.7-alpine
+    networks:
+      - proxy
+      - traefik-docker # secure way to obtainer docker socket info
+    ports:
+      - "80:80"
+      - "443:443"
+    deploy:
+      # mode: global # If enough workers use global and constrain to workers
+      replicas: 2
+      labels:
+        - traefik.enable=true
+        - traefik.port=8080
+        - traefik.backend=traefik
+        - traefik.frontend.rule=Host:traefik.domain.com
+        # - traefik.frontend.auth.basic.users=user:$$2y$$05$$9.VkJCOtlR5A8/HOgGUNVedOvM.pzor1lm/17ScxspkDfu9062DXW # Generate by: echo $(htpasswd -nbB user pass) | sed -e s/\\$/\\$\\$/g
+      update_config:
+        delay: 10s
+        parallelism: 2
+        order: start-first
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      # placement:
+      #   constraints:
+      #     constraints: [node.role == worker] # if you have enough servers, make this only run on workers (if using Docker Socket Proxy), maybe in a public DMZ
+    stop_grace_period: 30s
+    command: # List of commands: https://docs.traefik.io/configuration/backends/docker/
+      - --consul # Add Consul backend
+      - --consul.endpoint=${CONSUL_HOST}:8500 # Consul endpoint - using env
+      - --consul.prefix=traefik # Consul traefik prefix
+
+  # Use Docker Socket Proxy to access docker socket and restrict previledges
+  dockersocket:
+    <<: *default-opts
+    image: tecnativa/docker-socket-proxy
+    networks:
+      - traefik-docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      # CONTAINERS: 1
+      NETWORKS: 1
+      SERVICES: 1
+      # SWARM: 1
+      TASKS: 1
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.role == manager]
+
+networks:
+  proxy:
+    driver: overlay
+    name: proxy
+    driver_opts:
+      encrypted: "true"
+  traefik-docker:
+    driver: overlay
+    name: traefik-docker
+    driver_opts:
+      encrypted: "true" # since we're passing docker socket stuff over TCP, lets IPSec
