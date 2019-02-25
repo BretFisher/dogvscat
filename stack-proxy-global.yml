@@ -35,7 +35,7 @@ services:
       # Use your favourite settings here, but add:
       - storeconfig
       - --api
-      # NOTE: you'll want to lower this logLevel for real word stuff
+      # NOTE: you'll want to lower this logLevel for real world stuff
       - --logLevel="DEBUG"
       # NOTE: you'll want to disable this for anything of signifant traffic, or route logs outside stdout
       - --accessLog
