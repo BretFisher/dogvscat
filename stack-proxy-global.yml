@@ -50,7 +50,9 @@ services:
       - --consul.prefix=traefik
       - --defaultentrypoints=http,https
       - --entryPoints=Name:https Address::443 TLS
-      - --entryPoints=Name:http Address::80
+      - --entryPoints=Name:http Address::80 # don't force HTTPS
+      # - --entryPoints=Name:http Address::80 Redirect.EntryPoint:https  # force HTTPS
+      ## optional LetsEncrypt settings
       # - --acme
       # - --acme.email=${TRAEFIK_ACME_EMAIL}
       #   # TODO: envvar for email and default domain
