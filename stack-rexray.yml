@@ -1,6 +1,6 @@
 version: "3.7"
 
-# 1. WORKAROUND: would prefer this use null network driver, will use bride for now to avoid overlay
+# 1. WORKAROUND: would prefer this use null network driver, will use bridge for now to avoid overlay
 # 2. TODO: would prefer on-failure restart_policy, but need to run this in script to look
 # for if plugin exists first before reinstalling
 # 3. TODO: would prefer this picks a driver version, and support driver updates
@@ -22,13 +22,21 @@ services:
       - bridge
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: docker plugin install --grant-all-permissions rexray/dobs DOBS_REGION=nyc3 DOBS_TOKEN="${REXRAY_DO_TOKEN}" DOBS_CONVERTUNDERSCORES=true
-    # TODO: make token a secret
+    secrets:
+      - rexray_do_token
+    environment:
+      - REXRAY_DO_TOKEN_FILE=/run/secrets/rexray_do_token
+    command: sh -c "docker plugin install --grant-all-permissions rexray/dobs DOBS_REGION=nyc3 DOBS_TOKEN=`cat $REXRAY_DO_TOKEN_FILE` DOBS_CONVERTUNDERSCORES=true"
     deploy:
       mode: global
       restart_policy:
         condition: none
 
+secrets:
+  rexray_do_token:
+    external: true
+    name: rexray_do_token
+    
 networks:
   bridge:
     external: true
