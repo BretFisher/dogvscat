@@ -26,7 +26,7 @@ services:
       - rexray_do_token
     environment:
       - REXRAY_DO_TOKEN_FILE=/run/secrets/rexray_do_token
-    command: sh -c "docker plugin install --grant-all-permissions rexray/dobs DOBS_REGION=nyc3 DOBS_TOKEN=`cat $REXRAY_DO_TOKEN_FILE` DOBS_CONVERTUNDERSCORES=true"
+    command: sh -c "docker plugin install --grant-all-permissions rexray/dobs DOBS_REGION=nyc3 DOBS_TOKEN=`cat $${REXRAY_DO_TOKEN_FILE}` DOBS_CONVERTUNDERSCORES=true"
     deploy:
       mode: global
       restart_policy:
