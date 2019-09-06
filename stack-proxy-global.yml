@@ -26,6 +26,7 @@ x-default-opts:
 
 services:
 
+  # traefik-init adds the command: config to consul, and then quits
   traefik-init:
     <<: *default-opts
     image: traefik:1.7-alpine
@@ -68,6 +69,7 @@ services:
       restart_policy:
         condition: on-failure
 
+# actual proxy, running on each node, and using direct host ports
   traefik:
     <<: *default-opts
     image: traefik:1.7-alpine
@@ -101,6 +103,7 @@ services:
       # placement:
         # constraints: [node.role == worker]
 
+# stores the proxy config
   consul:
     <<: *default-opts
     image: consul
