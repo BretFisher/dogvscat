@@ -81,11 +81,11 @@ services:
       - target: 80
         published: 80
         protocol: tcp
-        mode: host
+        mode: ingress
       - target: 443
         published: 443
         protocol: tcp
-        mode: host
+        mode: ingress
       - target: 8080
         published: 8080
         protocol: tcp
