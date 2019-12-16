@@ -1,9 +1,9 @@
 # Dog vs. Cat: Docker Swarm Stacks on Stacks on Stacks
 
 Meanwhile, follow along this presentation I made during DockerCon 2018
-https://dockercon2018.hubs.vidyard.com/watch/k3Cv676wmxAwYDxbvcgcgC
+https://youtu.be/V9fxU5zJKb4
 
-[![screen shot 2018-08-16 at 2 14 20 pm](https://user-images.githubusercontent.com/6694151/44226710-bcb86900-a15e-11e8-87cf-ad930cfc8241.jpg)](https://dockercon2018.hubs.vidyard.com/watch/k3Cv676wmxAwYDxbvcgcgC)
+[![DockerCon EU Swarm Stack](https://img.youtube.com/vi/V9fxU5zJKb4/0.jpg)](https://youtu.be/V9fxU5zJKb4)
 
 This repo gives a few examples of patterns for how you might build Docker Swarm clusters with all the bells and whistles you would need in a real world setup. Note [I have a course on Swarm for $10 on Udemy](http://swarmmastery.com).
 
