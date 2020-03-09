@@ -1,10 +1,10 @@
 version: '3.7'
 
-x-default-opts: 
+x-default-opts:
   &default-opts
   logging:
     options:
-      max-size: "1m" 
+      max-size: "1m"
   # driver: "gelf"
   # options:
   #   gelf-address: "udp://127.0.0.1:5000"
@@ -21,7 +21,7 @@ services:
       - frontend
     deploy:
       endpoint_mode: dnsrr
-  
+
   db:
     <<: *default-opts
     image: postgres:9.6
@@ -41,8 +41,10 @@ services:
     deploy:
       replicas: 2
       labels:
-        - traefik.port=80
-        - traefik.frontend.rule=Host:vote.dogvs.cat
+        traefik.http.routers.vote.rule: Host(`vote.dogvs.cat`)
+        traefik.http.routers.vote.entryPoints: websecure
+        traefik.http.routers.vote.service: vote
+        traefik.http.services.vote.loadbalancer.server.port: 80
 
   result:
     <<: *default-opts
@@ -53,9 +55,11 @@ services:
     deploy:
       replicas: 2
       labels:
-        - traefik.port=80
-        - traefik.frontend.rule=Host:result.dogvs.cat
-        - traefik.backend.loadbalancer.stickiness=true
+        traefik.http.routers.result.rule: Host(`result.dogvs.cat`)
+        traefik.http.routers.result.entryPoints: websecure
+        traefik.http.routers.result.service: result
+        traefik.http.services.result.loadbalancer.server.port: 80
+        traefik.http.services.result.loadbalancer.sticky: "true"
 
   worker:
     <<: *default-opts
@@ -65,7 +69,9 @@ services:
       - backend
     deploy:
       replicas: 2
-        
+      labels:
+        traefik.enable: "true"
+
 networks:
   frontend: {}
   backend: {}

@@ -1,10 +1,10 @@
 version: '3.7'
 
-x-default-opts: 
+x-default-opts:
   &default-opts
   logging:
     options:
-      max-size: "1m" 
+      max-size: "1m"
   # driver: "gelf"
   # options:
   #   gelf-address: "udp://127.0.0.1:5000"
@@ -31,8 +31,10 @@ services:
     deploy:
       replicas: 1
       labels:
-        - traefik.port=2368
-        - traefik.frontend.rule=Host:ghost.dogvs.cat
+        traefik.http.routers.ghost.rule: Host(`ghost.dogvs.cat`)
+        traefik.http.routers.ghost.entryPoints: websecure
+        traefik.http.routers.ghost.service: ghost
+        traefik.http.services.ghost.loadbalancer.server.port: 2368
 
   # TODO: backup for static content
 
@@ -47,5 +49,5 @@ volumes:
     driver: rexray/dobs
     driver_opts:
       size: 1
- 
+
 

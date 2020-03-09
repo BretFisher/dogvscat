@@ -1,10 +1,10 @@
 version: "3.7"
 
-x-default-opts: 
+x-default-opts:
   &default-opts
   logging:
     options:
-      max-size: "1m" 
+      max-size: "1m"
   # driver: "gelf"
   # options:
   #   gelf-address: "udp://127.0.0.1:5000"
@@ -20,8 +20,10 @@ services:
         # constraints: [node.role == manager]
         # place on managers when not using agent, place on workers if using agent
       labels:
-        - traefik.port=9000
-        - traefik.frontend.rule=Host:portainer.dogvs.cat
+        traefik.http.routers.portainer.rule: Host(`portainer.dogvs.cat`)
+        traefik.http.routers.dogvs.entryPoints: websecure
+        traefik.http.routers.portainer.service: portainer
+        traefik.http.services.portainer.loadbalancer.server.port: 9000
     networks:
       - proxy
       - portainer

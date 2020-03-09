@@ -4,11 +4,11 @@
 
 version: '3.7'
 
-x-default-opts: 
+x-default-opts:
   &default-opts
   logging:
     options:
-      max-size: "1m" 
+      max-size: "1m"
   # driver: "gelf"
   # options:
   #   gelf-address: "udp://127.0.0.1:5000"
@@ -17,7 +17,7 @@ services:
 
   traefik:
     <<: *default-opts
-    image: traefik:1.7-alpine
+    image: traefik:2.2
     networks:
       - proxy
     volumes:
@@ -26,38 +26,36 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "8080:8080" # traefik dashboard
     command:
       # Use your favourite settings here, but add:
-      - --docker
-      - --docker.swarmMode
-      - --docker.domain=traefik
-      - --docker.network=proxy
-      - --docker.watch
+      - --providers.docker
+      - --providers.docker.swarmMode
+      - --providers.docker.network=proxy
+      - --providers.docker.watch
       - --api
-      - --defaultentrypoints=http,https
-      - --entryPoints=Name:https Address::443 TLS
-      - --entryPoints=Name:http Address::80 # don't force HTTPS
-      # - --entryPoints=Name:http Address::80 Redirect.EntryPoint:https  # force HTTPS
+      - --entryPoints.web.address=:80
+      - --entryPoints.websecure.address=:443
+      - --entrypoints.websecure.http.tls=true
+      # - --entrypoints.web.http.redirections.entryPoint.to=websecure # force HTTPS
+      # - --entrypoints.web.http.tls.certresolver=default
       ## optional LetsEncrypt settings
-      # - --acme
-      # - --acme.email=${TRAEFIK_ACME_EMAIL}
-      #   # TODO: envvar for email and default domain
-      # - --acme.httpchallenge
-      # - --acme.httpchallenge.entrypoint=http
-      # - --acme.onhostrule=true
-      # - --acme.entrypoint=https
-      # - --acme.storage=/etc/traefik/acme/acme.json
-      # - --acme.acmelogging
-      # - --acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
-      # - --acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+      # - --certificatesResolvers.default.acme.email=${TRAEFIK_ACME_EMAIL}
+      # - --certificatesResolvers.default.acme.storage=/etc/traefik/acme/acme.json
+      # - --certificatesResolvers.default.acme.tlsChallenge=true
+      # - --certificatesResolvers.default.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory
+      # - --certificatesResolvers.default.acme.caServer=https://acme-v02.api.letsencrypt.org/directory
     deploy:
       placement:
         constraints: [node.role == manager]
+      # Dynamic Configuration
       labels:
-        - traefik.port=8080
-        - traefik.frontend.rule=Host:traefik.dogvs.cat
- 
+        traefik.http.routers.api.rule: Host(`traefik.dogvs.cat`)
+        traefik.http.routers.api.entryPoints: websecure
+        traefik.http.routers.api.service: api@internal
+        traefik.http.routers.api.middlewares: auth
+        traefik.http.services.dummy.loadbalancer.server.port: 4242
+        traefik.http.middlewares.auth.basicauth.users: test:$$apr1$$H6uskkkW$$IgXLP6ewTrSuBkTrqE8wj/,test2:$$apr1$$d9hr9HBB$$4HxwgUir3HP4EsggP/QNo0
+
 volumes:
   acme:
     driver: rexray/dobs
