@@ -4,7 +4,7 @@ version: 0.1.0
 # Name of the application
 name: menu
 # A short description of the application
-description: 
+description:
 # Namespace to use when pushing to a registry. This is typically your Hub username.
 namespace: dogvscat
 # List of application maintainers with name and email for each
@@ -25,8 +25,10 @@ services:
     deploy:
       replicas: 3
       labels:
-        - traefik.port=80
-        - traefik.frontend.rule=Host:www.dogvs.cat,dogvs.cat
+        traefik.http.routers.dogvs.rule: Host(`www.dogvs.cat`) || Host(`dogvs.cat`)
+        traefik.http.routers.dogvs.entryPoints: websecure
+        traefik.http.routers.dogvs.service: dogvs
+        traefik.http.services.dogvs.loadbalancer.server.port: 80
     # logging:
     #   driver: "gelf"
     #   options:

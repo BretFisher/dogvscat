@@ -1,10 +1,10 @@
 version: '3.7'
 
-x-default-opts: 
+x-default-opts:
   &default-opts
   logging:
     options:
-      max-size: "1m" 
+      max-size: "1m"
   # driver: "gelf"
   # options:
   #   gelf-address: "udp://127.0.0.1:5000"
@@ -60,10 +60,13 @@ services:
       mode: replicated
       replicas: 1
       labels:
-        - traefik.port=5601
-        - traefik.frontend.rule=Host:kibana.dogvs.cat
-        - traefik.frontend.auth.basic=${KIBANA_USER:-admin}:${KIBANA_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK}
-      # TODO: make secrets secret
+        traefik.http.routers.kibana.rule: Host(`kibana.dogvs.cat`)
+        traefik.http.routers.kibana.entryPoints: websecure
+        traefik.http.routers.kibana.service: kibana
+        traefik.http.routers.kibana.middlewares: kibana-auth
+        traefik.http.services.kibana.loadbalancer.server.port: 5601
+        traefik.http.middlewares.kibana-auth.basicauth.users: ${KIBANA_USER:-admin}:${KIBANA_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK}
+        # TODO: make secrets secret
 
 configs:
 

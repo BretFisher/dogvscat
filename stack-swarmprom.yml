@@ -1,10 +1,10 @@
 version: "3.7"
 
-x-default-opts: 
+x-default-opts:
   &default-opts
   logging:
     options:
-      max-size: "1m" 
+      max-size: "1m"
   # driver: "gelf"
   # options:
   #   gelf-address: "udp://127.0.0.1:5000"
@@ -100,8 +100,10 @@ services:
       mode: replicated
       replicas: 1
       labels:
-        - traefik.port=3000
-        - traefik.frontend.rule=Host:grafana.dogvs.cat
+        traefik.http.routers.grafana.rule: Host(`grafana.dogvs.cat`)
+        traefik.http.routers.grafana.entryPoints: websecure
+        traefik.http.routers.grafana.service: grafana
+        traefik.http.services.grafana.loadbalancer.server.port: 3000
       placement:
         constraints:
           - node.role == manager
@@ -131,9 +133,12 @@ services:
       mode: replicated
       replicas: 1
       labels:
-        - traefik.port=9093
-        - traefik.frontend.rule=Host:alertmanager.dogvs.cat
-        - traefik.frontend.auth.basic=${AM_USER:-admin}:${AM_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK}
+        traefik.http.routers.alertmanager.rule: Host(`alertmanager.dogvs.cat`)
+        traefik.http.routers.alertmanager.entryPoints: websecure
+        traefik.http.routers.alertmanager.service: alertmanager
+        traefik.http.routers.alertmanager.middlewares: alertmanager-auth
+        traefik.http.services.alertmanager.loadbalancer.server.port: 9093
+        traefik.http.middlewares.alertmanager-auth.basicauth.users: ${AM_USER:-admin}:${AM_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK}
       placement:
         constraints:
           - node.role == manager
@@ -156,9 +161,12 @@ services:
       mode: replicated
       replicas: 1
       labels:
-        - traefik.port=9094
-        - traefik.frontend.rule=Host:unsee.dogvs.cat
-        - traefik.frontend.auth.basic=${UNSEE_USER:-admin}:${UNSEE_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK}
+        traefik.http.routers.unsee.rule: Host(`unsee.dogvs.cat`)
+        traefik.http.routers.unsee.entryPoints: websecure
+        traefik.http.routers.unsee.service: unsee
+        traefik.http.routers.unsee.middlewares: unsee-auth
+        traefik.http.services.unsee.loadbalancer.server.port: 9094
+        traefik.http.middlewares.unsee-auth.basicauth.users: ${UNSEE_USER:-admin}:${UNSEE_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK}
         # - com.df.users=${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}
 
 
@@ -213,9 +221,12 @@ services:
       mode: replicated
       replicas: 1
       labels:
-        - traefik.port=9090
-        - traefik.frontend.rule=Host:prom.dogvs.cat
-        - traefik.frontend.auth.basic=${KIBANA_USER:-admin}:${KIBANA_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK} 
+        traefik.http.routers.prom.rule: Host(`prom.dogvs.cat`)
+        traefik.http.routers.prom.entryPoints: websecure
+        traefik.http.routers.prom.service: prom
+        traefik.http.routers.prom.middlewares: prom-auth
+        traefik.http.services.prom.loadbalancer.server.port: 9090
+        traefik.http.middlewares.prom-auth.basicauth.users: ${KIBANA_USER:-admin}:${KIBANA_PASSWORD:-$2y$05$oZcj4FgdSFEYNCH0EH/3Vu7Hp72gkvEadHzMsDhGFkbvS/ZrKMKfK}
       placement:
         constraints:
           - node.role == manager

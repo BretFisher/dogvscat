@@ -1,10 +1,10 @@
 version: '3.7'
 
-x-default-opts: 
+x-default-opts:
   &default-opts
   logging:
     options:
-      max-size: "1m" 
+      max-size: "1m"
   # driver: "gelf"
   # options:
   #   gelf-address: "udp://127.0.0.1:5000"
@@ -19,8 +19,10 @@ services:
     deploy:
       replicas: 3
       labels:
-        - traefik.port=80
-        - traefik.frontend.rule=Host:www.dogvs.cat,dogvs.cat
+        traefik.http.routers.dogvs.rule: Host(`www.dogvs.cat`) || Host(`dogvs.cat`)
+        traefik.http.routers.dogvs.entryPoints: websecure
+        traefik.http.routers.dogvs.service: dogvs
+        traefik.http.services.dogvs.loadbalancer.server.port: 80
     networks:
       - proxy
 

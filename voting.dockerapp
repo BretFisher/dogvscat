@@ -4,7 +4,7 @@ version: 0.1.0
 # Name of the application
 name: voting
 # A short description of the application
-description: 
+description:
 # Namespace to use when pushing to a registry. This is typically your Hub username.
 namespace: dogvscat
 # List of application maintainers with name and email for each
@@ -53,8 +53,10 @@ services:
     deploy:
       replicas: 2
       labels:
-        - traefik.port=80
-        - traefik.frontend.rule=Host:vote.dogvs.cat
+        traefik.http.routers.vote.rule: Host(`vote.dogvs.cat`)
+        traefik.http.routers.vote.entryPoints: websecure
+        traefik.http.routers.vote.service: vote
+        traefik.http.services.vote.loadbalancer.server.port: 80
     # logging:
     #   driver: "gelf"
     #   options:
@@ -68,9 +70,11 @@ services:
     deploy:
       replicas: 2
       labels:
-        - traefik.port=80
-        - traefik.frontend.rule=Host:result.dogvs.cat
-        - traefik.backend.loadbalancer.stickiness=true
+        traefik.http.routers.result.rule: Host(`result.dogvs.cat`)
+        traefik.http.routers.result.entryPoints: websecure
+        traefik.http.routers.result.service: result
+        traefik.http.services.result.loadbalancer.server.port: 80
+        traefik.http.services.result.loadbalancer.sticky: "true"
     # logging:
     #   driver: "gelf"
     #   options:
@@ -87,7 +91,7 @@ services:
     #   driver: "gelf"
     #   options:
     #     gelf-address: "udp://127.0.0.1:5000"
-        
+
 networks:
   frontend: {}
   backend: {}
