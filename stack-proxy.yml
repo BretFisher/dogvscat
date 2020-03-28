@@ -54,6 +54,7 @@ services:
         traefik.http.routers.api.service: api@internal
         traefik.http.routers.api.middlewares: auth
         traefik.http.services.dummy.loadbalancer.server.port: 4242
+        # sample users/password test/test and test2/test2
         traefik.http.middlewares.auth.basicauth.users: test:$$apr1$$H6uskkkW$$IgXLP6ewTrSuBkTrqE8wj/,test2:$$apr1$$d9hr9HBB$$4HxwgUir3HP4EsggP/QNo0
 
 volumes:
