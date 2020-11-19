@@ -37,7 +37,7 @@ services:
       - --entryPoints.websecure.address=:443
       - --entrypoints.websecure.http.tls=true
       # - --entrypoints.web.http.redirections.entryPoint.to=websecure # force HTTPS
-      # - --entrypoints.web.http.tls.certresolver=default
+      # - --entrypoints.websecure.http.tls.certresolver=default
       ## optional LetsEncrypt settings
       # - --certificatesResolvers.default.acme.email=${TRAEFIK_ACME_EMAIL}
       # - --certificatesResolvers.default.acme.storage=/etc/traefik/acme/acme.json
