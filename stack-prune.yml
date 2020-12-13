@@ -13,7 +13,7 @@ services:
   image-prune:
     <<: *default-opts
     image: docker
-    command: sh -c "while true; do docker image prune -af; sleep 86400; done"
+    command: sh -c "while true; do docker image prune -af --filter \"until=24h\"; sleep 86400; done"
     networks:
       - bridge
     volumes:
