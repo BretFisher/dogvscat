@@ -17,7 +17,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     secrets:
       - rexray_do_token
-    command: sh -c "./install-plugin.sh --driver dobs --version latest --do-secret rexray_do_token --do-region nyc3 --do-convert-underscore"
+    command: sh -c "./install-plugin.sh --driver dobs --version 0.11.4 --do-secret rexray_do_token --do-region nyc3 --do-convert-underscore"
     deploy:
       mode: global
       restart_policy:
