@@ -1,9 +1,5 @@
 version: "3.7"
 
-# 2. TODO: would prefer on-failure restart_policy, but need to run this in script to look
-# for if plugin exists first before reinstalling
-# 3. TODO: would prefer this picks a driver version, and support driver updates
-
 x-default-opts: 
   &default-opts
   logging:
@@ -16,18 +12,16 @@ x-default-opts:
 services:
   plugin-rexray:
     <<: *default-opts
-    image: mavenugo/swarm-exec:17.03.0-ce
+    image: kaustavb12/rexray-plugin-installer:2021-04-12
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     secrets:
       - rexray_do_token
-    environment:
-      - REXRAY_DO_TOKEN_FILE=/run/secrets/rexray_do_token
-    command: sh -c "docker plugin install --grant-all-permissions rexray/dobs DOBS_REGION=nyc3 DOBS_TOKEN=$$(cat $$REXRAY_DO_TOKEN_FILE) DOBS_CONVERTUNDERSCORES=true"
+    command: sh -c "./install-plugin.sh --driver dobs --version latest --do-secret rexray_do_token --do-region nyc3 --do-convert-underscore"
     deploy:
       mode: global
       restart_policy:
-        condition: none
+        condition: on-failure
 
 secrets:
   rexray_do_token:
