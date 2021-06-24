@@ -89,6 +89,10 @@ After this finishes, if you're using my docker-machine example you can connect t
 
 ### Step 5: Enable Persistent Storage with REX-Ray
 
+Create a docker secret using the `REXRAY_DO_TOKEN` environment variable you set earlier.
+
+`echo $REXRAY_DO_TOKEN | docker secret create rexray_do_token -`
+
 From this point on, everything is in stack files! No custom node config's needed. 🎉
 
 `docker stack deploy -c stack-rexray.yml rexray`
